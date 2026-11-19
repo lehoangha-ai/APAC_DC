@@ -1131,6 +1131,10 @@
       document.querySelectorAll('.sys-tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('sys-' + id).classList.add('active');
       btn.classList.add('active');
+      // Sync Step 3 eng-system dropdown to match Step 2 selection
+      const engSys = document.getElementById('eng-system');
+      if (engSys) engSys.value = id.toUpperCase();
+      updateStep4Context();
     }
 
     /* ── RSAP import engine (browser-side, mirrors rsap_import_engine.py) ── */
@@ -2009,6 +2013,82 @@ tr:nth-child(even) td{background:#fafbfc}
 
       // Standards Atlas library panel
       renderAtlasStandards(code);
+
+      // Sync Step 4 context, formulas, and standards to this country
+      updateStep4Context();
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       STEP 4 SYNC — keeps Step 4 aligned with Step 1 + Step 2
+    ══════════════════════════════════════════════════════════ */
+    function updateStep4Context() {
+      const c = COUNTRY_DB[_selectedCountry] || COUNTRY_DB['TH'];
+      const sigma = c.sigmaAllow || 270;
+      const sigmaFmt = c.sigmaFormula || ('φ·fy = ' + sigma + ' MPa');
+
+      // Active system from Step 2 (or Step 3 dropdown if already set)
+      const engSysEl = document.getElementById('eng-system');
+      const sysId = (engSysEl ? engSysEl.value : null) ||
+                    (() => {
+                      const tab = document.querySelector('.sys-tab-btn.active');
+                      return tab ? tab.textContent.trim().replace(/\s*@\s*/,'_').replace(/\s+mm/i,'').replace(' ','').toUpperCase() : 'C51_305';
+                    })();
+      const SYS_LABELS = {C51_305:'C51 @ 305 mm', C76_305:'C76 @ 305 mm', C76_406:'C76 @ 406 mm'};
+      const Wx = LIMITS.Wx[sysId];
+      const sysLabel = SYS_LABELS[sysId] || sysId;
+
+      // Active deflection from Step 3 dropdown
+      const deflEl = document.getElementById('eng-deflection');
+      const deflDen = deflEl ? (deflEl.value || '240') : '240';
+
+      // 1. Context bar in Step 4
+      const bar = document.getElementById('chk-context-bar');
+      if (bar) {
+        const sigColor = sigma >= 300 ? 'var(--ok)' : sigma <= 180 ? 'var(--check)' : 'var(--accent)';
+        bar.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--fg);">
+            <span style="font-size:14px;">${c.flag}</span>${c.name}
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;">
+            <span style="font-size:10px;font-weight:600;color:var(--fg-muted);">σ_allow</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;color:${sigColor};">${sigma} MPa</span>
+            <span style="font-size:10px;color:var(--fg-muted);">(${c.phi || ''})</span>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;">
+            <span style="font-size:10px;font-weight:600;color:var(--fg-muted);">System</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:700;color:var(--tag);">${sysLabel}</span>
+            ${Wx ? `<span style="font-size:10px;color:var(--fg-muted);">Wx=${Wx} mm³</span>` : '<span style="font-size:10px;color:var(--check);">Wx TBD</span>'}
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;">
+            <span style="font-size:10px;font-weight:600;color:var(--fg-muted);">Deflection</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;color:var(--fg);">L / ${deflDen}</span>
+          </span>`;
+      }
+
+      // 2. Update check-a formula (ULS bending) with live σ_allow
+      const chkAFormula = document.getElementById('chk-a-formula');
+      if (chkAFormula) {
+        const wxStr = Wx ? `Wx=${Wx} mm³` : 'Wx=TBD';
+        const sigColor = sigma >= 300 ? 'var(--ok)' : sigma <= 180 ? 'var(--check)' : 'var(--accent)';
+        chkAFormula.innerHTML = `σ = M<sub>max</sub>/${wxStr} ≤ <span style="font-weight:700;color:${sigColor};">${sigma} MPa</span> <span style="font-size:9px;opacity:.6;">(${c.phi || 'φ=0.90'})</span>`;
+      }
+
+      // 3. Update check-b formula (deflection) with live L/N
+      const chkBFormula = document.getElementById('chk-b-formula');
+      if (chkBFormula) {
+        const heightVal = document.getElementById('eng-height')?.value || '3200';
+        const deflLimit = (parseFloat(heightVal) / parseFloat(deflDen)).toFixed(1);
+        chkBFormula.innerHTML = `y ≤ L/${deflDen} = ${heightVal}/${deflDen} = <strong>${deflLimit} mm</strong>`;
+      }
+
+      // 4. Update Step 4 standards pills from COUNTRY_DB
+      const pillsEl = document.getElementById('chk-std-pills');
+      if (pillsEl) {
+        const codes = [c.structCode, c.altCode, c.fireCode, c.windCode].filter(Boolean);
+        pillsEl.innerHTML = codes.map(code =>
+          `<span class="std-pill">${code}</span>`
+        ).join('');
+      }
     }
 
     // Click-to-select opt pills
@@ -2205,7 +2285,8 @@ tr:nth-child(even) td{background:#fafbfc}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
           <div>
             <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">System <span style="color:var(--rsap)">*</span></label>
-            <select id="eng-system" style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
+            <select id="eng-system" onchange="updateStep4Context()"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
               <option value="C51_305">C51@305mm (default)</option>
               <option value="C76_305">C76@305mm</option>
               <option value="C76_406">C76@406mm</option>
@@ -2214,11 +2295,13 @@ tr:nth-child(even) td{background:#fafbfc}
           <div>
             <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Wall height H (mm) <span style="color:var(--rsap)">*</span></label>
             <input id="eng-height" type="number" value="3200" min="1000" max="9000" step="100"
+              oninput="updateStep4Context()"
               style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
           </div>
           <div>
             <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Deflection limit L / <span style="color:var(--rsap)">*</span></label>
-            <select id="eng-deflection" style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
+            <select id="eng-deflection" onchange="updateStep4Context()"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
               <option value="240">240 — standard (IBC / TCVN)</option>
               <option value="300">300 — Eurocode / AS/NZS</option>
               <option value="360">360 — tile / brittle finish</option>
@@ -2297,9 +2380,20 @@ tr:nth-child(even) td{background:#fafbfc}
       <div class="stage-meta">
         <div class="stage-label">Step 4 · Excel Pass/Fail Checks</div>
         <h2 class="stage-title">5 Structural Verifications</h2>
-        <p class="stage-desc">Excel calculates allowable limits and compares against RSAP outputs</p>
+        <p class="stage-desc">Allowable limits driven by Step 1 country + Step 2 system selection</p>
       </div>
     </div>
+
+    <!-- Step 1 + 2 context bar — updates on every country/system change -->
+    <div id="chk-context-bar" style="margin-bottom:14px;padding:10px 14px;border-radius:8px;
+      background:var(--bg);border:1px solid var(--border);
+      display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-family:'Space Grotesk',sans-serif;">
+      <span style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+        color:var(--fg-muted);flex-basis:100%;margin-bottom:2px;">
+        Active design basis (Step 1 → Step 2 → Step 4)
+      </span>
+    </div>
+
     <div class="check-list">
       <div class="check-row" id="chk-a">
         <span class="check-badge ok" id="chk-a-badge">—</span>
@@ -2329,7 +2423,7 @@ tr:nth-child(even) td{background:#fafbfc}
     </div>
     <div id="chk-overall" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-align:center;"></div>
 
-    <div class="standards" style="margin-top:14px; padding-top:14px;">
+    <div class="standards" style="margin-top:14px; padding-top:14px;" id="chk-std-pills">
       <span class="std-pill">TCVN 5575-2024 §7.2</span>
       <span class="std-pill">AISC 360-16</span>
       <span class="std-pill">Gypsum Construction Handbook Ch.2</span>
