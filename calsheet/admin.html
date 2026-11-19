@@ -422,7 +422,18 @@
       loadingEl.style.display = 'none';
       badge.textContent = 'error';
       badge.style.background = '#fff3e0'; badge.style.color = 'var(--warn)';
-      errorEl.textContent = 'Admin API error: ' + err.message;
+      const isBrowserBlock = (err.message || '').includes('Forbidden use of secret API key in browser');
+      if (isBrowserBlock) {
+        errorEl.innerHTML = `
+          <strong>⚠️ Supabase Browser Security Guard:</strong> Supabase blocks secret keys when called directly from web browsers.<br/>
+          To manage users via GUI, please use 
+          <a href="https://supabase.com/dashboard/project/bkvnfrnqseqquewbcpqo/auth/users" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700;text-decoration:underline;">
+            Supabase Dashboard → Authentication → Users ↗
+          </a> (click "Add user" → "Create user").
+        `;
+      } else {
+        errorEl.textContent = 'Admin API error: ' + err.message;
+      }
       errorEl.style.display = 'block';
     }
   }
