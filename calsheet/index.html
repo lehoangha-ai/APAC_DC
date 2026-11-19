@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Knauf Suprawall Calc Workflow</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -858,6 +859,33 @@
         </div>
         <div class="std-select-row" id="std-pills"></div>
         <div id="std-note" style="font-size:11px; color:var(--fg-muted); margin-top:6px;"></div>
+
+      <!-- Load combination + Capacity formula panel (dynamic per country) -->
+      <div id="country-calc-panel" style="margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--accent-bg);border:1px solid var(--accent);display:none;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Design basis — Step 4a drivers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--fg-muted);margin-bottom:3px;">Load combination</div>
+            <div id="country-loadcombo" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--fg);"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--fg-muted);margin-bottom:3px;">Allowable stress — σ_allow</div>
+            <div id="country-sigma" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--fg);"></div>
+          </div>
+        </div>
+        <div id="country-phi-note" style="font-size:11px;color:var(--fg-muted);margin-top:6px;"></div>
+      </div>
+
+      <!-- Seismic flag panel (shown only for IN / ID / KR) -->
+      <div id="seismic-panel" style="margin-top:10px;padding:12px 14px;border-radius:8px;background:var(--check-bg);border:1.5px solid var(--check);display:none;">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <span style="font-size:16px;flex-shrink:0;">🚨</span>
+          <div>
+            <div style="font-size:11.5px;font-weight:700;color:var(--check);margin-bottom:4px;">SEISMIC CHECK MANDATORY — <span id="seismic-code-label"></span></div>
+            <div id="seismic-note-text" style="font-size:11px;color:var(--check);line-height:1.6;"></div>
+            <div style="margin-top:7px;font-size:11px;color:var(--fg-muted);">→ Run separate seismic lateral force check · do not combine with Suprawall structural output · Steven Koh to confirm Ie factor for each DC site</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1174,8 +1202,10 @@
       const sigma_actual = Wx ? Mmax / Wx : null;
       const defl_limit   = H / defl;
 
+      const countryC = COUNTRY_DB[_selectedCountry] || COUNTRY_DB['TH'];
+      const sigmaLimit = countryC.sigmaAllow || 270;
       const checks = {
-        a:  sigma_actual != null ? {actual:sigma_actual, limit:270,          unit:'MPa', ok: sigma_actual <= 270} : null,
+        a:  sigma_actual != null ? {actual:sigma_actual, limit:sigmaLimit, unit:'MPa', ok: sigma_actual <= sigmaLimit} : null,
         b:  {actual:ydisp,         limit:defl_limit,     unit:'mm',  ok: ydisp <= defl_limit},
         c:  sigma ? {actual:sigma, limit:2.2,             unit:'MPa', ok: sigma <= 2.2}       : null,
         d1: {actual:Qmax,          limit:3700,            unit:'N',   ok: Qmax  <= 3700},
@@ -1545,7 +1575,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid border = mandatory VN codes · Dashed = international reference'
+        stdNote: 'Solid border = mandatory VN codes · Dashed = international reference',
+        loadCombo: '1.2D + 1.6W (ASCE 7 / TCVN 2737)',
+        phi: 'φ = 0.90 (LRFD)', sigmaAllow: 270,
+        sigmaFormula: 'φ · fy = 0.90 × 300 = 270 MPa',
+        seismic: false,
       },
       MY: {
         name: 'Malaysia', flag: '🇲🇾', phase: 'Priority-1',
@@ -1574,7 +1608,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'UBBL 1984 Amend.', label:'Building / fire code', mandatory:true},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory MS codes · Dashed = AISI reference cross-check'
+        stdNote: 'Solid = mandatory MS codes · Dashed = AISI reference cross-check',
+        loadCombo: '1.35G + 1.5Q (MS EN 1990)',
+        phi: 'γM0 = 1.00 (Eurocode)', sigmaAllow: 300,
+        sigmaFormula: 'fy / γM0 = 300 / 1.00 = 300 MPa',
+        seismic: false,
       },
       SG: {
         name: 'Singapore', flag: '🇸🇬', phase: 'Priority-1',
@@ -1603,7 +1641,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'BCA BC2:2012', label:'Struct. submission', mandatory:true},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory SS / BCA codes · Dashed = AISI reference'
+        stdNote: 'Solid = mandatory SS / BCA codes · Dashed = AISI reference',
+        loadCombo: '1.35G + 1.5Q (SS EN 1990)',
+        phi: 'γM0 = 1.00 (Eurocode)', sigmaAllow: 300,
+        sigmaFormula: 'fy / γM0 = 300 / 1.00 = 300 MPa',
+        seismic: false,
       },
       AU: {
         name: 'Australia', flag: '🇦🇺', phase: 'Priority-1',
@@ -1632,7 +1674,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'AS 2588', label:'Gypsum plasterboard', mandatory:true},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory AU codes · Dashed = AISI reference cross-check'
+        stdNote: 'Solid = mandatory AU codes · Dashed = AISI reference cross-check',
+        loadCombo: '1.2G + 1.5Q (AS/NZS 1170.0)',
+        phi: 'φb = 0.90 (AS/NZS 4600)', sigmaAllow: 270,
+        sigmaFormula: 'φb · fy = 0.90 × 300 = 270 MPa',
+        seismic: false,
       },
       IN: {
         name: 'India', flag: '🇮🇳', phase: 'Priority-1',
@@ -1661,7 +1707,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'IS 2095 Pt.1', label:'Gypsum board', mandatory:true},
           {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory IS / NBC codes · Dashed = AISC reference · 🚨 = seismic mandatory'
+        stdNote: 'Solid = mandatory IS / NBC codes · Dashed = AISC reference · 🚨 = seismic mandatory',
+        loadCombo: '1.5(DL + LL) or 0.9DL + 1.5WL (IS 875 Pt.5)',
+        phi: 'ASD — Allowable Stress Design', sigmaAllow: 180,
+        sigmaFormula: '0.6 · fy = 0.6 × 300 = 180 MPa (IS 801 ASD)',
+        seismic: true, seismicCode: 'IS 1893-1:2016', seismicNote: 'Zone II–V · Ie = 1.25 for critical/essential facilities (data center)',
       },
       ID: {
         name: 'Indonesia', flag: '🇮🇩', phase: 'Priority-1',
@@ -1689,7 +1739,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'Permen PU 26/2008', label:'Fire safety regs', mandatory:true},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory SNI codes · Dashed = AISI reference · 🚨 = seismic mandatory'
+        stdNote: 'Solid = mandatory SNI codes · Dashed = AISI reference · 🚨 = seismic mandatory',
+        loadCombo: '1.2D + 1.6L (SNI 1727:2020 / ASCE 7 basis)',
+        phi: 'φ = 0.90 (SNI 7971 LRFD)', sigmaAllow: 270,
+        sigmaFormula: 'φ · fy = 0.90 × 300 = 270 MPa',
+        seismic: true, seismicCode: 'SNI 1726:2019', seismicNote: 'High seismicity zones (Sumatera, Sulawesi) · Ie = 1.25–1.50 for data centers',
       },
       KR: {
         name: 'South Korea', flag: '🇰🇷', phase: 'Priority-1',
@@ -1717,7 +1771,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory KBC / NFSC codes · Dashed = AISC / AISI reference'
+        stdNote: 'Solid = mandatory KBC / NFSC codes · Dashed = AISC / AISI reference',
+        loadCombo: '1.2D + 1.6W (KBC 2016 / AISC basis)',
+        phi: 'φ = 0.90 (KBC LRFD)', sigmaAllow: 270,
+        sigmaFormula: 'φ · fy = 0.90 × 300 = 270 MPa',
+        seismic: true, seismicCode: 'KBC 2016 Chapter 4', seismicNote: 'Seoul / Incheon moderate seismicity · Ie = 1.25 for data centers',
       },
       TH: {
         name: 'Thailand', flag: '🇹🇭', phase: 'Priority-1',
@@ -1746,7 +1804,11 @@ tr:nth-child(even) td{background:#fafbfc}
           {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
           {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
         ],
-        stdNote: 'Solid = mandatory EIT / TIS / NFPA codes · Dashed = AISC reference'
+        stdNote: 'Solid = mandatory EIT / TIS / NFPA codes · Dashed = AISC reference',
+        loadCombo: '1.2D + 1.6W (EIT / ASCE 7 basis)',
+        phi: 'φ = 0.90 (LRFD)', sigmaAllow: 270,
+        sigmaFormula: 'φ · fy = 0.90 × 300 = 270 MPa',
+        seismic: false,
       }
     };
 
@@ -1837,6 +1899,29 @@ tr:nth-child(even) td{background:#fafbfc}
       }
       const stdNote = document.getElementById('std-note');
       if (stdNote) stdNote.textContent = c.stdNote;
+
+      // Load combination + capacity formula panel
+      const calcPanel = document.getElementById('country-calc-panel');
+      if (calcPanel && c.loadCombo) {
+        calcPanel.style.display = 'block';
+        document.getElementById('country-loadcombo').textContent = c.loadCombo;
+        const sigmaEl = document.getElementById('country-sigma');
+        sigmaEl.textContent = c.sigmaFormula;
+        sigmaEl.style.color = c.sigmaAllow >= 300 ? 'var(--ok)' : c.sigmaAllow <= 180 ? 'var(--check)' : 'var(--accent)';
+        document.getElementById('country-phi-note').textContent = c.phi + ' · updates Step 4a σ_allow limit → ' + c.sigmaAllow + ' MPa';
+      }
+
+      // Seismic flag panel
+      const seismicPanel = document.getElementById('seismic-panel');
+      if (seismicPanel) {
+        if (c.seismic) {
+          seismicPanel.style.display = 'block';
+          document.getElementById('seismic-code-label').textContent = c.seismicCode;
+          document.getElementById('seismic-note-text').textContent = c.seismicNote;
+        } else {
+          seismicPanel.style.display = 'none';
+        }
+      }
     }
 
     // Click-to-select opt pills
@@ -1931,7 +2016,7 @@ tr:nth-child(even) td{background:#fafbfc}
         ['SYSTEM','Nogging Profile','Knauf Pro C','','Wx=9285 mm3 | Ix=705684 mm4 | spacing 1000 mm'],
         ['SYSTEM','FEA Solver','RSAP 2021','','Step 3'],
         [''],
-        ['ALLOWABLE LIMITS','Bending Capacity M_allow',M_allow,'','phi x fy x Wx = 0.90 x 300 x Wx'],
+        ['ALLOWABLE LIMITS','Bending Capacity M_allow',M_allow,'',c.sigmaFormula + ' × Wx'],
         ['ALLOWABLE LIMITS','Deflection delta_allow (L/'+deflDen+')',d_allow,'','H / '+deflDen+' = '+height+' / '+deflDen],
         ['ALLOWABLE LIMITS','Board Stress sigma_allow','2.2','MPa','Knauf board datasheet (both sides)'],
         ['ALLOWABLE LIMITS','Bolt Shear Q_allow','3700','N','HAS M6x40 — verify with Hilti/Fischer VN catalog'],
@@ -2269,3 +2354,5 @@ tr:nth-child(even) td{background:#fafbfc}
   <span class="note-icon">⚠️</span>
   <span>This calculation is provided by Knauf Vietnam as an advisory document. It must be reviewed and approved by the Developer, Project Management, or a licensed Structural Engineer before application to any project.</span>
 </div>
+
+</body></html>
