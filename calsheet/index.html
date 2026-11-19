@@ -1350,7 +1350,7 @@
       });
     });
 
-    function exportReport() {
+    async function exportReport() {
       const project  = document.getElementById('rpt-project').value.trim()  || '[Project Name]';
       const customer = document.getElementById('rpt-customer').value.trim() || '[Customer]';
       const city     = document.getElementById('rpt-city').value.trim()     || '[City]';
