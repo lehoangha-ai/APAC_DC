@@ -1064,6 +1064,20 @@
       </div>
     </div>
 
+    <!-- ── CSV Export banner ── -->
+    <div style="margin-top:18px; padding:14px 16px; background:var(--accent-bg); border:1.5px solid var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="font-size:13px; font-weight:700; color:var(--accent); margin-bottom:3px;">Export Parameters → Structural Engineer</div>
+        <div style="font-size:11px; color:var(--fg-muted); line-height:1.5;">Exports Step 1 + Step 2 inputs · section properties · allowable limits · RSAP sheet spec<br>→ <strong style="color:var(--fg)">CSV file</strong> — open directly in Excel · share with S.E. for independent verification</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+        <span id="csv-status" style="font-size:11px; color:var(--fg-muted);"></span>
+        <button onclick="exportCSV()" style="display:inline-flex; align-items:center; gap:7px; padding:8px 18px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:12.5px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; transition:opacity .15s; white-space:nowrap;" onmouseover="this.style.opacity='.82'" onmouseout="this.style.opacity='1'">
+          ⬇ Export CSV
+        </button>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1841,17 +1855,139 @@ tr:nth-child(even) td{background:#fafbfc}
       if (cust && rptCust && !rptCust.value) rptCust.value = cust.value;
     }
 
-    // Initialise Step 1 on load
-    document.addEventListener('DOMContentLoaded', () => {
+    // ── CSV Export — all key parameters for structural engineer ──
+    async function exportCSV() {
+      const c = COUNTRY_DB[_selectedCountry] || COUNTRY_DB['TH'];
+      function getHighlighted(optId) {
+        const el = document.querySelector('#' + optId + ' .opt.highlight');
+        return el ? el.textContent.trim().replace(/✓/g,'').trim() : '—';
+      }
+      const project  = (document.getElementById('s1-project')?.value  || '').trim() || '[Project]';
+      const customer = (document.getElementById('s1-customer')?.value || '').trim() || '[Customer]';
+      const height   = document.getElementById('s1-height')?.value || '3200';
+      const city     = getHighlighted('city-opts');
+      const windZone = getHighlighted('wind-opts');
+      const fireRtg  = getHighlighted('fire-opts');
+      const deflLim  = getHighlighted('defl-opts');
+      const std      = getHighlighted('std-opts');
+
+      const activeTab = document.querySelector('.sys-tab-btn.active');
+      const sysLabel  = activeTab ? activeTab.textContent.trim() : 'C51 @ 305 mm';
+      const SYS = {
+        'C51 @ 305 mm': { stud:'Double Suprawall C51', t:'0.72', Wx:'1621',  Ix:'41339',  s:'305', fy:'300', E:'200000', WxFmt:'1,621', IxFmt:'41,339' },
+        'C76 @ 305 mm': { stud:'Double Suprawall C76', t:'0.72', Wx:'PENDING',Ix:'PENDING',s:'305', fy:'300', E:'200000', WxFmt:'PENDING — source from Knauf datasheet', IxFmt:'PENDING — source from Knauf datasheet' },
+        'C76 @ 406 mm': { stud:'Double Suprawall C76', t:'0.72', Wx:'PENDING',Ix:'PENDING',s:'406', fy:'300', E:'200000', WxFmt:'PENDING — source from Knauf datasheet', IxFmt:'PENDING — source from Knauf datasheet' },
+      };
+      const sp = SYS[sysLabel] || SYS['C51 @ 305 mm'];
+
+      const phiMap = { ok:'phi = 0.90 (AISC/AISI/EIT)', adapt:'gammaM0 = 1.00 (Eurocode) — recalculate capacity', check:'phi = 0.90 / ASD (verify seismic per IS1893/SNI1726)' };
+      const phi = phiMap[c.familyTag] || 'phi = 0.90';
+
+      const H       = parseFloat(height);
+      const deflMatch = deflLim.match(/L\/(\d+)/);
+      const deflDen   = deflMatch ? parseInt(deflMatch[1]) : 240;
+      const WxNum     = sp.Wx !== 'PENDING' ? parseFloat(sp.Wx) : null;
+      const M_allow   = WxNum ? (0.90 * 300 * WxNum).toLocaleString() + ' N·mm' : 'PENDING';
+      const d_allow   = H > 0 ? (H / deflDen).toFixed(1) + ' mm' : 'PENDING';
+
+      const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+      const fname = 'Knauf_Params_' + _selectedCountry + '_' + project.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,30) + '_' + new Date().toISOString().slice(0,10) + '.csv';
+
+      const rows = [
+        ['# Knauf Suprawall+GLS12.7+Tiles — Structural Parameter Sheet'],
+        ['# Generated: ' + today + '  |  Tool: Knauf APAC DC Calc Workflow v13'],
+        ['# PRELIMINARY — Not for permit submission. Verify all values with approved datasheet.'],
+        [''],
+        ['SECTION','PARAMETER','VALUE','UNIT','SOURCE / NOTE'],
+        ['PROJECT','Project Name',project,'',''],
+        ['PROJECT','Customer',customer,'',''],
+        ['PROJECT','Country / Market',c.name + ' (' + _selectedCountry + ')','','APAC DC Priority-1'],
+        ['PROJECT','City / Province',city.replace(/…/,'').trim(),'',''],
+        ['PROJECT','Date',today,'',''],
+        [''],
+        ['DESIGN INPUT','Wall Height H',height,'mm','Step 1 input'],
+        ['DESIGN INPUT','Wind Zone',windZone,'',c.windCode],
+        ['DESIGN INPUT','Fire Rating',fireRtg,'',c.fireCode],
+        ['DESIGN INPUT','Deflection Limit',deflLim,'',c.deflHint||''],
+        ['DESIGN INPUT','Design Standard',std,'',c.structCode],
+        ['DESIGN INPUT','Standard Family',c.family,'',''],
+        ['DESIGN INPUT','Safety Factor',phi,'',''],
+        ['DESIGN INPUT','Live Load (indoor)','250','Pa','Fixed — APAC DC standard'],
+        ['DESIGN INPUT','Dead Load DL2','-83.5','kg/m²','Cladding boards + Rockwool (by others)'],
+        ['DESIGN INPUT','Load Combination','1.1 x DL + 1.2 x LL','','Knauf Suprawall design basis'],
+        [''],
+        ['SYSTEM','Configuration',sysLabel,'','Step 2 selection'],
+        ['SYSTEM','Stud Profile',sp.stud,'','Knauf Suprawall datasheet'],
+        ['SYSTEM','Stud Thickness t',sp.t,'mm','Knauf Suprawall datasheet'],
+        ['SYSTEM','Section Modulus Wx',sp.WxFmt,'mm3','Knauf Suprawall datasheet'],
+        ['SYSTEM','Moment of Inertia Ix',sp.IxFmt,'mm4','Knauf Suprawall datasheet'],
+        ['SYSTEM','Stud Spacing',sp.s,'mm','Step 2 selection'],
+        ['SYSTEM','Steel fy',sp.fy,'MPa','EN 10147 / ASTM A653'],
+        ['SYSTEM','Steel E',sp.E,'MPa','Standard'],
+        ['SYSTEM','Cladding Side 1','Knauf FireShield 15.9 mm','','sigma_allow = 2.2 MPa | Knauf datasheet'],
+        ['SYSTEM','Cladding Middle','Cementboard 12 mm + Rockwool 50 mm 60 kg/m3','','DL2 = -83.5 kg/m2 | by others'],
+        ['SYSTEM','Cladding Side 2','Knauf Glass Mat GLS 12.7 mm','','sigma_allow = 2.2 MPa | Knauf datasheet'],
+        ['SYSTEM','Track Profile',sysLabel.includes('C51') ? 'Suprawall U53' : 'Suprawall U78','','Knauf datasheet'],
+        ['SYSTEM','Nogging Profile','Knauf Pro C','','Wx=9285 mm3 | Ix=705684 mm4 | spacing 1000 mm'],
+        ['SYSTEM','FEA Solver','RSAP 2021','','Step 3'],
+        [''],
+        ['ALLOWABLE LIMITS','Bending Capacity M_allow',M_allow,'','phi x fy x Wx = 0.90 x 300 x Wx'],
+        ['ALLOWABLE LIMITS','Deflection delta_allow (L/'+deflDen+')',d_allow,'','H / '+deflDen+' = '+height+' / '+deflDen],
+        ['ALLOWABLE LIMITS','Board Stress sigma_allow','2.2','MPa','Knauf board datasheet (both sides)'],
+        ['ALLOWABLE LIMITS','Bolt Shear Q_allow','3700','N','HAS M6x40 — verify with Hilti/Fischer VN catalog'],
+        ['ALLOWABLE LIMITS','Bolt Axial N_allow','2850','N','HAS M6x40 — verify with Hilti/Fischer VN catalog'],
+        ['ALLOWABLE LIMITS','Bolt Pullout N_pullout','1200','N','HAS M6 | concrete C20/25 — verify on site'],
+        [''],
+        ['RSAP EXPORT REQUIRED','Sheet 1','Member_Forces','','Column: My (N·mm) → M_max'],
+        ['RSAP EXPORT REQUIRED','Sheet 2','Displacements','','Column: Uy or Uz (mm) → delta_max'],
+        ['RSAP EXPORT REQUIRED','Sheet 3','Plate_Stresses','','Column: Smax (N/mm2) → sigma_board'],
+        ['RSAP EXPORT REQUIRED','Sheet 4','Reactions','','Column: Fy/Fz (N), Fx (N) → Q_bolt, N_bolt'],
+        ['RSAP EXPORT REQUIRED','Units','N mm N/mm2','','Decimal separator: dot (.)'],
+        [''],
+        ['ADVISORY','Preliminary Notice','ALL OUTPUTS ARE PRELIMINARY','','Steven Koh PI Insurance not finalized'],
+        ['ADVISORY','Standard Family Tag',c.familyTag.toUpperCase(),'',c.familyTag==='ok'?'Direct AISC apply':c.familyTag==='adapt'?'Recalculate with Eurocode/AS capacity tables':'SEISMIC CHECK MANDATORY'],
+      ];
+
+      const csv = rows.map(r => {
+        if (r.length === 1) return r[0];
+        if (r.length === 0) return '';
+        return r.map(cell => {
+          const s = String(cell == null ? '' : cell);
+          return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s;
+        }).join(',');
+      }).join('\r\n');
+
+      const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'});
+      const st = document.getElementById('csv-status');
+      if (st) { st.style.color='var(--fg-muted)'; st.textContent='Preparing…'; }
+      try {
+        if (window.claude) {
+          const dl = await claude.use('downloads');
+          if (dl) { await dl.save({filename:fname, data:blob}); if(st){st.style.color='var(--ok)';st.textContent='✓ Saved: '+fname;} return; }
+        }
+      } catch(e) { if(e&&e.code==='user_cancelled'){if(st)st.textContent='Cancelled.';return;} }
+      // Fallback: Blob URL (GitHub Pages / standard browser)
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+      if(st){st.style.color='var(--ok)';st.textContent='✓ '+fname;}
+    }
+
+    // Initialise Step 1 — robust pattern (fires immediately if DOM already ready)
+    function initStep1() {
       buildCountryPills();
       selectCountry('TH'); // Default: Thailand (active CRAH project)
-
-      // Auto-sync Step 1 → Step 5 on input
       ['s1-project','s1-customer'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', syncStep1ToReport);
       });
-    });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initStep1);
+    } else {
+      initStep1();
+    }
   </script>
 
   <div class="connector">
