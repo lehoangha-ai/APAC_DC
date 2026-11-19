@@ -613,13 +613,31 @@
     border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
     background: var(--bg-card);
     color: var(--fg-muted);
-    cursor: default;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
   }
+  .opt:hover { border-color: var(--accent); color: var(--accent); }
   .opt.highlight {
     background: var(--accent);
     color: #fff;
     border-color: var(--accent);
   }
+  .step1-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 4px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .step1-input:focus { border-color: var(--accent); }
+  .step1-input::placeholder { color: var(--fg-muted); opacity: .7; }
   .select-hint {
     font-size: 11px;
     color: var(--fg-muted);
@@ -754,23 +772,23 @@
     <div class="item-grid">
       <div class="item input-required">
         <span class="item-dot" style="background:var(--accent)"></span>
-        <div class="item-body">
-          <span class="item-name">Project Name</span>
-          <span class="item-val">Tên dự án · free text</span>
+        <div class="item-body" style="width:100%">
+          <span class="item-name">Project Name <span style="color:var(--fg-muted);font-weight:400;font-size:11px;">/ Tên dự án</span></span>
+          <input id="s1-project" class="step1-input" type="text" placeholder="e.g. VGC Hanoi DC Phase 1" autocomplete="off">
         </div>
       </div>
       <div class="item input-required">
         <span class="item-dot" style="background:var(--accent)"></span>
-        <div class="item-body">
-          <span class="item-name">Customer</span>
-          <span class="item-val">Khách hàng · free text</span>
+        <div class="item-body" style="width:100%">
+          <span class="item-name">Customer <span style="color:var(--fg-muted);font-weight:400;font-size:11px;">/ Khách hàng</span></span>
+          <input id="s1-customer" class="step1-input" type="text" placeholder="e.g. Vinhomes Corp" autocomplete="off">
         </div>
       </div>
       <div class="item input-required">
         <span class="item-dot" style="background:var(--accent)"></span>
-        <div class="item-body">
-          <span class="item-name">Wall Height H</span>
-          <span class="item-val">Default 3,200 mm · key structural driver</span>
+        <div class="item-body" style="width:100%">
+          <span class="item-name">Wall Height H <span style="color:var(--fg-muted);font-weight:400;font-size:11px;">mm · key structural driver</span></span>
+          <input id="s1-height" class="step1-input" type="number" value="3200" min="1000" max="9000" step="100" placeholder="3200">
         </div>
       </div>
     </div>
@@ -805,9 +823,9 @@
 
         <div class="select-item">
           <span class="select-label">Wall Location</span>
-          <div class="select-options">
-            <span class="opt highlight">Indoor (Data Hall)</span>
-            <span class="opt">Outdoor / Semi-exposed</span>
+          <div class="select-options" id="wallloc-opts">
+            <span class="opt highlight" onclick="selectOpt(this)">Indoor (Data Hall)</span>
+            <span class="opt" onclick="selectOpt(this)">Outdoor / Semi-exposed</span>
           </div>
           <span class="select-hint">Indoor: LL=250 Pa · Outdoor: use wind zone W₀</span>
         </div>
@@ -1764,12 +1782,12 @@ tr:nth-child(even) td{background:#fafbfc}
       badge.style.border = `1px solid ${tc.border}`;
       badge.innerHTML = `<strong>${c.family}</strong>&nbsp;&nbsp;${c.familyNote}`;
 
-      // Helper: build opt pills
+      // Helper: build opt pills (clickable)
       function buildOpts(containerId, options, defaultIdx) {
         const el = document.getElementById(containerId);
         if (!el) return;
         el.innerHTML = options.map((o, i) =>
-          `<span class="opt${i === defaultIdx ? ' highlight' : ''}">${o}</span>`
+          `<span class="opt${i === defaultIdx ? ' highlight' : ''}" onclick="selectOpt(this)">${o}</span>`
         ).join('');
       }
 
@@ -1807,10 +1825,32 @@ tr:nth-child(even) td{background:#fafbfc}
       if (stdNote) stdNote.textContent = c.stdNote;
     }
 
+    // Click-to-select opt pills
+    function selectOpt(el) {
+      el.closest('.select-options').querySelectorAll('.opt').forEach(o => o.classList.remove('highlight'));
+      el.classList.add('highlight');
+    }
+
+    // Sync Step 1 text inputs → Step 5 report fields
+    function syncStep1ToReport() {
+      const proj = document.getElementById('s1-project');
+      const cust = document.getElementById('s1-customer');
+      const rptProj = document.getElementById('rpt-project');
+      const rptCust = document.getElementById('rpt-customer');
+      if (proj && rptProj && !rptProj.value) rptProj.value = proj.value;
+      if (cust && rptCust && !rptCust.value) rptCust.value = cust.value;
+    }
+
     // Initialise Step 1 on load
     document.addEventListener('DOMContentLoaded', () => {
       buildCountryPills();
       selectCountry('TH'); // Default: Thailand (active CRAH project)
+
+      // Auto-sync Step 1 → Step 5 on input
+      ['s1-project','s1-customer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', syncStep1ToReport);
+      });
     });
   </script>
 
