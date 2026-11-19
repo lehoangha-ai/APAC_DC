@@ -860,8 +860,8 @@
     </div>
     <div id="auth-signin-form">
       <div class="auth-field">
-        <label>Email</label>
-        <input id="si-email" type="email" placeholder="you@company.com" autocomplete="email" />
+        <label>Email or Username</label>
+        <input id="si-email" type="text" placeholder="you@company.com or admin" autocomplete="username" />
       </div>
       <div class="auth-field">
         <label>Password</label>
@@ -2703,26 +2703,81 @@ tr:nth-child(even) td{background:#fafbfc}
     console.warn('Supabase initialization error:', e);
   }
 
+  /* ── Admin SSO & Local Auth Bridge ── */
+  const ADMIN_SALT = 'knauf_admin_apac_dc_salt_2024';
+  const ADMIN_KEY  = 'knauf_admin_v1';
+  const ADMIN_SESS = 'knauf_admin_sess';
+
+  async function checkAdminPassword(password) {
+    try {
+      const enc = new TextEncoder();
+      const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits(
+        { name:'PBKDF2', salt:enc.encode(ADMIN_SALT), iterations:100000, hash:'SHA-256' },
+        keyMat, 256
+      );
+      const hash = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
+      const stored = localStorage.getItem(ADMIN_KEY);
+      if (stored) return hash === stored;
+      // Default fallback: "admin"
+      const defKeyMat = await crypto.subtle.importKey('raw', enc.encode('admin'), 'PBKDF2', false, ['deriveBits']);
+      const defBits = await crypto.subtle.deriveBits(
+        { name:'PBKDF2', salt:enc.encode(ADMIN_SALT), iterations:100000, hash:'SHA-256' },
+        defKeyMat, 256
+      );
+      const defHash = Array.from(new Uint8Array(defBits)).map(b => b.toString(16).padStart(2,'0')).join('');
+      return hash === defHash;
+    } catch(e) {
+      return false;
+    }
+  }
+
   function authShowError(msg)   { const e=document.getElementById('auth-error');   e.textContent=msg; e.style.display='block'; document.getElementById('auth-success').style.display='none'; }
   function authShowSuccess(msg) { const e=document.getElementById('auth-success'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-error').style.display='none'; }
   function authClearMessages()  { document.getElementById('auth-error').style.display='none'; document.getElementById('auth-success').style.display='none'; }
 
   async function authSignIn() {
     authClearMessages();
-    const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
-    const pw    = document.getElementById('si-password')?.value || '';
-    if (!email) return authShowError('Enter your email.');
-    if (!pw)    return authShowError('Enter your password.');
-    if (!_sb)   return authShowError('Supabase client failed to load. Please check connection and refresh.');
+    const identifier = (document.getElementById('si-email')?.value || '').trim();
+    const pw         = document.getElementById('si-password')?.value || '';
+    if (!identifier) return authShowError('Enter your email or username.');
+    if (!pw)         return authShowError('Enter your password.');
+
     const btn = document.getElementById('auth-signin-btn');
     if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pw });
+
+    // Direct Admin Sign-in
+    if (identifier.toLowerCase() === 'admin') {
+      const isValid = await checkAdminPassword(pw);
+      if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
+      if (isValid) {
+        try {
+          sessionStorage.setItem(ADMIN_SESS, '1');
+          localStorage.setItem(ADMIN_SESS, '1');
+        } catch(e){}
+        authEnterApp('admin (Administrator)');
+        return;
+      } else {
+        return authShowError('Incorrect admin password.');
+      }
+    }
+
+    if (!_sb) {
+      if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
+      return authShowError('Supabase client failed to load. Please check connection and refresh.');
+    }
+
+    const { data, error } = await _sb.auth.signInWithPassword({ email: identifier.toLowerCase(), password: pw });
     if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
     if (error) return authShowError(error.message);
     authEnterApp(data.user.email);
   }
 
   async function authSignOut() {
+    try {
+      sessionStorage.removeItem(ADMIN_SESS);
+      localStorage.removeItem(ADMIN_SESS);
+    } catch(e){}
     if (_sb) await _sb.auth.signOut();
     document.getElementById('main-content').style.display = 'none';
     document.getElementById('auth-bar').style.display = 'none';
@@ -2740,8 +2795,16 @@ tr:nth-child(even) td{background:#fafbfc}
     document.getElementById('auth-bar-email').textContent = email;
   }
 
-  /* ── Boot: restore existing Supabase session ── */
+  /* ── Boot: restore existing Supabase or Admin session ── */
   (async function authBoot() {
+    // Check Admin session bridge first
+    try {
+      if (sessionStorage.getItem(ADMIN_SESS) === '1' || localStorage.getItem(ADMIN_SESS) === '1') {
+        authEnterApp('admin (Administrator)');
+        return;
+      }
+    } catch(e){}
+
     if (!_sb) return;
     try {
       const { data: { session } } = await _sb.auth.getSession();
@@ -2751,6 +2814,7 @@ tr:nth-child(even) td{background:#fafbfc}
       if (event === 'SIGNED_IN' && session) {
         authEnterApp(session.user.email);
       } else if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+        if (localStorage.getItem(ADMIN_SESS) === '1') return; // preserve admin session
         document.getElementById('main-content').style.display = 'none';
         document.getElementById('auth-bar').style.display = 'none';
         document.getElementById('auth-overlay').style.display = 'flex';

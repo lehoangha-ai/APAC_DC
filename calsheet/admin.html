@@ -144,6 +144,9 @@
     </div>
     <div id="topbar-right">
       <span id="topbar-user"></span>
+      <a href="index.html" class="btn-sm" style="background:var(--accent);color:#fff;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 14px;border-radius:6px;">
+        📐 Calculation Sheet →
+      </a>
       <button class="btn-sm" onclick="adminLogout()">Sign out</button>
     </div>
   </div>
@@ -351,7 +354,10 @@
 
   /* ══ LOGOUT ══ */
   function adminLogout() {
-    try { sessionStorage.removeItem(SESSION_KEY); } catch(e){}
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    } catch(e){}
     document.getElementById('dash-wrap').style.display = 'none';
     document.getElementById('login-wrap').style.display = 'flex';
     document.getElementById('l-pass').value = '';
@@ -359,6 +365,10 @@
 
   /* ══ ENTER DASHBOARD ══ */
   function enterDash() {
+    try {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      localStorage.setItem(SESSION_KEY, '1');
+    } catch(e) {}
     document.getElementById('login-wrap').style.display = 'none';
     document.getElementById('dash-wrap').style.display  = 'flex';
     document.getElementById('topbar-user').textContent  = 'admin';
