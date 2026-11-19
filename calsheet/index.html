@@ -1,0 +1,2095 @@
+<title>Knauf Suprawall Calc Workflow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* Layout: vertical flow with 5 swim-lane stages */
+  :root {
+    --bg:         #f5f6f8;
+    --bg-card:    #ffffff;
+    --fg:         #1a1e27;
+    --fg-muted:   #5a6070;
+    --border:     #dde1ea;
+    --accent:     #1b55e2;
+    --accent-bg:  #e8edfb;
+    --rsap:       #0e7f6a;
+    --rsap-bg:    #e3f5f1;
+    --check:      #c46b00;
+    --check-bg:   #fff3e0;
+    --ok:         #1a7a3c;
+    --ok-bg:      #e6f4ec;
+    --tag:        #6b4fc8;
+    --tag-bg:     #f0ebff;
+    --arrow:      #9ba3b4;
+    --shadow:     0 1px 4px rgba(0,0,0,.07), 0 3px 12px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:         #131720;
+      --bg-card:    #1e2330;
+      --fg:         #e8ecf4;
+      --fg-muted:   #8b93a8;
+      --border:     #2e3448;
+      --accent:     #4b7cf3;
+      --accent-bg:  #1a2340;
+      --rsap:       #2bbfa0;
+      --rsap-bg:    #0d2822;
+      --check:      #f0a040;
+      --check-bg:   #2a1f0a;
+      --ok:         #3ec96b;
+      --ok-bg:      #0a2016;
+      --tag:        #9d7ef5;
+      --tag-bg:     #1e1540;
+      --arrow:      #4a5370;
+      --shadow:     0 1px 4px rgba(0,0,0,.3), 0 3px 12px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:         #131720;
+    --bg-card:    #1e2330;
+    --fg:         #e8ecf4;
+    --fg-muted:   #8b93a8;
+    --border:     #2e3448;
+    --accent:     #4b7cf3;
+    --accent-bg:  #1a2340;
+    --rsap:       #2bbfa0;
+    --rsap-bg:    #0d2822;
+    --check:      #f0a040;
+    --check-bg:   #2a1f0a;
+    --ok:         #3ec96b;
+    --ok-bg:      #0a2016;
+    --tag:        #9d7ef5;
+    --tag-bg:     #1e1540;
+    --arrow:      #4a5370;
+    --shadow:     0 1px 4px rgba(0,0,0,.3), 0 3px 12px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    max-width: 760px;
+    margin: 0 auto 36px;
+  }
+  .page-header .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .page-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 700;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  .page-header p {
+    color: var(--fg-muted);
+    margin: 0;
+    max-width: 540px;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 760px;
+    margin: 0 auto 32px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Flow container ── */
+  .flow {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Stage card ── */
+  .stage {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .stage-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .stage-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .stage-meta { flex: 1; min-width: 0; }
+  .stage-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .stage-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .stage-desc {
+    font-size: 12.5px;
+    color: var(--fg-muted);
+    margin: 0;
+  }
+
+  /* Stage accent overrides */
+  .stage--user   { border-top: 3px solid var(--accent); }
+  .stage--system { border-top: 3px solid var(--tag); }
+  .stage--rsap   { border-top: 3px solid var(--rsap); }
+  .stage--excel  { border-top: 3px solid var(--check); }
+  .stage--output { border-top: 3px solid var(--ok); }
+
+  .stage--user   .stage-icon { background: var(--accent-bg); }
+  .stage--system .stage-icon { background: var(--tag-bg); }
+  .stage--rsap   .stage-icon { background: var(--rsap-bg); }
+  .stage--excel  .stage-icon { background: var(--check-bg); }
+  .stage--output .stage-icon { background: var(--ok-bg); }
+
+  .stage--user   .stage-label { color: var(--accent); }
+  .stage--system .stage-label { color: var(--tag); }
+  .stage--rsap   .stage-label { color: var(--rsap); }
+  .stage--excel  .stage-label { color: var(--check); }
+  .stage--output .stage-label { color: var(--ok); }
+
+  /* ── Item grid inside a stage ── */
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .item-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .item-body { min-width: 0; }
+  .item-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 1px;
+  }
+  .item-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Tab selector (system selection) ── */
+  .tab-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tab-chip {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    cursor: default;
+    transition: border-color .15s;
+  }
+  .tab-chip.active {
+    border-color: var(--tag);
+    background: var(--tag-bg);
+  }
+  .tab-chip-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .tab-chip.active .tab-chip-label { color: var(--tag); }
+  .tab-chip-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Check rows ── */
+  .check-list { display: flex; flex-direction: column; gap: 7px; }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .check-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .check-badge.ok  { background: var(--ok-bg);    color: var(--ok); }
+  .check-badge.warn{ background: var(--check-bg); color: var(--check); }
+  .check-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+  }
+  .check-formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--fg-muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ── Conclusion box ── */
+  .conclusion {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .concl-item {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--ok-bg);
+    border: 1px solid var(--ok);
+  }
+  .concl-check {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .concl-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ok);
+  }
+  .concl-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Connector arrows ── */
+  .connector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 0;
+    gap: 8px;
+    color: var(--fg-muted);
+    font-size: 11px;
+  }
+  .connector svg { color: var(--arrow); flex-shrink: 0; }
+  .connector-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .05em;
+    color: var(--fg-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+
+  /* ── Standards strip ── */
+  .standards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .std-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  /* ── System library (Step 2) ── */
+  .sys-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .sys-tab-btn {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 7px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .sys-tab-btn:hover { border-color: var(--tag); color: var(--tag); }
+  .sys-tab-btn.active {
+    border-color: var(--tag);
+    background: var(--tag-bg);
+    color: var(--tag);
+  }
+  .sys-panel { display: none; }
+  .sys-panel.active { display: block; }
+
+  .sys-section {
+    margin-bottom: 14px;
+  }
+  .sys-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sys-section-title span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--tag);
+  }
+
+  .prop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 7px;
+  }
+  .prop-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 11px;
+  }
+  .prop-cell.locked {
+    border-left: 3px solid var(--tag);
+  }
+  .prop-cell.source-needed {
+    border-left: 3px solid var(--check);
+    opacity: .85;
+  }
+  .prop-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--fg-muted);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .prop-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    display: block;
+  }
+  .prop-val.tag { color: var(--tag); }
+  .prop-val.warn { color: var(--check); font-size: 11px; font-weight: 500; }
+  .prop-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--fg-muted);
+    margin-left: 2px;
+  }
+
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .layer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+  .layer-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    min-width: 48px;
+    text-align: center;
+  }
+  .layer-badge.s1   { background: var(--accent-bg); color: var(--accent); }
+  .layer-badge.mid  { background: var(--check-bg);  color: var(--check); }
+  .layer-badge.s2   { background: var(--rsap-bg);   color: var(--rsap); }
+  .layer-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+  }
+  .layer-props {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .layer-prop {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--fg-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+
+  .bolt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .bolt-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bolt-table td {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+  }
+  .bolt-table tr:last-child td { border-bottom: none; }
+  .bolt-table tr.active-bolt td { background: var(--tag-bg); color: var(--tag); font-weight: 600; }
+  .bolt-table tr.active-bolt td:first-child { border-radius: 4px 0 0 4px; }
+  .bolt-table tr.active-bolt td:last-child  { border-radius: 0 4px 4px 0; }
+  .bolt-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  /* ── Select input (dropdown-style) ── */
+  .select-group {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .select-group-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .select-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+  .select-item {
+    border: 2px solid var(--accent);
+    background: var(--accent-bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    position: relative;
+  }
+  .select-item::after {
+    content: "SELECT";
+    position: absolute;
+    top: -9px; right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    background: var(--accent);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .select-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .select-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .opt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    background: var(--bg-card);
+    color: var(--fg-muted);
+    cursor: default;
+  }
+  .opt.highlight {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .select-hint {
+    font-size: 11px;
+    color: var(--fg-muted);
+    margin-top: 5px;
+    display: block;
+  }
+
+  /* ── Standard pills in Step 1 ── */
+  .std-select-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .std-sel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1.5px solid var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+  .std-sel.optional {
+    border-style: dashed;
+    opacity: .75;
+  }
+
+  /* ── User-input highlight ── */
+  .input-required {
+    border: 2px solid var(--accent) !important;
+    background: var(--accent-bg) !important;
+    position: relative;
+  }
+  .input-required::after {
+    content: "FILL IN";
+    position: absolute;
+    top: -9px; right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    background: var(--accent);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .input-required .item-dot { background: var(--accent) !important; }
+  .input-required .item-name { color: var(--accent); }
+
+  .tab-chip.input-required {
+    border: 2px solid var(--accent) !important;
+    background: var(--accent-bg) !important;
+  }
+  .tab-chip.input-required::after {
+    top: -9px; right: 8px;
+  }
+  .tab-chip.input-required .tab-chip-label { color: var(--accent) !important; }
+
+  .input-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--accent-bg);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .input-banner svg { flex-shrink: 0; }
+
+  /* ── Note ── */
+  .note {
+    max-width: 760px;
+    margin: 24px auto 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    font-size: 12px;
+    color: var(--fg-muted);
+    display: flex;
+    gap: 10px;
+  }
+  .note-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+
+  @media (max-width: 540px) {
+    .item-grid { grid-template-columns: 1fr; }
+    .conclusion { grid-template-columns: 1fr 1fr; }
+    .check-formula { display: none; }
+    .tab-row { flex-direction: column; }
+  }
+</style>
+
+<div class="page-header">
+  <div class="eyebrow">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6h4M6 4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Knauf APAC DC · Structural Calc
+  </div>
+  <h1>Suprawall + GLS 12.7 + Tiles — Calculation Workflow</h1>
+  <p>End-to-end flow from user inputs through RSAP 2021 FEA modeling to pass/fail structural checks per TCVN 5575-2024 / AISC 360-16.</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>User input</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--tag)"></span>System selection</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--rsap)"></span>RSAP 2021 (FEA)</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--check)"></span>Excel checks</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span>Conclusion</div>
+</div>
+
+<div class="flow">
+
+  <!-- ══ STAGE 1: User Input ══ -->
+  <div class="stage stage--user">
+    <div class="stage-header">
+      <div class="stage-icon">📝</div>
+      <div class="stage-meta">
+        <div class="stage-label">Step 1 · User Input</div>
+        <h2 class="stage-title">Project Information</h2>
+        <p class="stage-desc">3 fields — blank in every fresh file, filled once per project</p>
+      </div>
+    </div>
+    <div class="input-banner">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      3 fields must be filled — everything else is pre-locked in the file
+    </div>
+    <div class="item-grid">
+      <div class="item input-required">
+        <span class="item-dot" style="background:var(--accent)"></span>
+        <div class="item-body">
+          <span class="item-name">Project Name</span>
+          <span class="item-val">Tên dự án · free text</span>
+        </div>
+      </div>
+      <div class="item input-required">
+        <span class="item-dot" style="background:var(--accent)"></span>
+        <div class="item-body">
+          <span class="item-name">Customer</span>
+          <span class="item-val">Khách hàng · free text</span>
+        </div>
+      </div>
+      <div class="item input-required">
+        <span class="item-dot" style="background:var(--accent)"></span>
+        <div class="item-body">
+          <span class="item-name">Wall Height H</span>
+          <span class="item-val">Default 3,200 mm · key structural driver</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Selection inputs ── -->
+    <div class="select-group">
+      <div class="select-group-title">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x=".75" y=".75" width="9.5" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 5.5h5M3 3.5h5M3 7.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Selection inputs — drives load &amp; standard database
+      </div>
+
+      <!-- Country / Market selector -->
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--border);">
+        <span class="select-label" style="display:block;margin-bottom:6px;">Country / Market — APAC DC Priority-1</span>
+        <div id="country-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <div id="family-badge" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;"></div>
+      </div>
+
+      <div class="select-row">
+
+        <div class="select-item">
+          <span class="select-label" id="city-label">Province / City</span>
+          <div class="select-options" id="city-opts"></div>
+          <span class="select-hint" id="city-hint"></span>
+        </div>
+
+        <div class="select-item">
+          <span class="select-label" id="wind-label">Wind Zone</span>
+          <div class="select-options" id="wind-opts"></div>
+          <span class="select-hint" id="wind-hint">Indoor wall → LL fixed 250 Pa regardless of zone</span>
+        </div>
+
+        <div class="select-item">
+          <span class="select-label">Wall Location</span>
+          <div class="select-options">
+            <span class="opt highlight">Indoor (Data Hall)</span>
+            <span class="opt">Outdoor / Semi-exposed</span>
+          </div>
+          <span class="select-hint">Indoor: LL=250 Pa · Outdoor: use wind zone W₀</span>
+        </div>
+
+        <div class="select-item">
+          <span class="select-label">Fire Rating Required</span>
+          <div class="select-options" id="fire-opts"></div>
+          <span class="select-hint" id="fire-hint"></span>
+        </div>
+
+        <div class="select-item">
+          <span class="select-label">Deflection Limit</span>
+          <div class="select-options" id="defl-opts"></div>
+          <span class="select-hint" id="defl-hint"></span>
+        </div>
+
+        <div class="select-item">
+          <span class="select-label">Design Standard</span>
+          <div class="select-options" id="std-opts"></div>
+          <span class="select-hint" id="std-hint">→ sets allowable stress limit in Step 4a</span>
+        </div>
+
+      </div>
+
+      <!-- Standards library strip (dynamic) -->
+      <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border);">
+        <div class="select-group-title" style="margin-bottom:8px;">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 1.5h7a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V2a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4h4M3.5 6h4M3.5 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Standards database — confirm versions on file
+        </div>
+        <div class="std-select-row" id="std-pills"></div>
+        <div id="std-note" style="font-size:11px; color:var(--fg-muted); margin-top:6px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="connector">
+    <svg width="16" height="24" viewBox="0 0 16 24" fill="none"><line x1="8" y1="0" x2="8" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><polyline points="4,16 8,22 12,16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+    <span class="connector-label">country known → load region fixed</span>
+  </div>
+
+  <!-- ══ STAGE 2: System Selection ══ -->
+  <div class="stage stage--system">
+    <div class="stage-header">
+      <div class="stage-icon">📐</div>
+      <div class="stage-meta">
+        <div class="stage-label">Step 2 · System Library</div>
+        <h2 class="stage-title">Select Configuration — Pre-locked Properties</h2>
+        <p class="stage-desc">Click a configuration to expand its full property library. Purple border = locked from Knauf datasheet. Orange border = value must be sourced before running RSAP.</p>
+      </div>
+    </div>
+
+    <div class="input-banner">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Pick the configuration that matches the stud size &amp; spacing on the project drawing
+    </div>
+
+    <div class="sys-tabs">
+      <button class="sys-tab-btn active" onclick="switchSys('c51_305',this)">C51 @ 305 mm</button>
+      <button class="sys-tab-btn" onclick="switchSys('c76_305',this)">C76 @ 305 mm</button>
+      <button class="sys-tab-btn" onclick="switchSys('c76_406',this)">C76 @ 406 mm</button>
+    </div>
+
+    <!-- ══ C51 @ 305 ══ -->
+    <div class="sys-panel active" id="sys-c51_305">
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Vertical Stud</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Profile</span><span class="prop-val tag">Double Suprawall C51</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Section modulus Wx</span><span class="prop-val">1,621<span class="prop-unit">mm³</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Moment of inertia Ix</span><span class="prop-val">41,339<span class="prop-unit">mm⁴</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Stud spacing</span><span class="prop-val">305<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel fy</span><span class="prop-val">300<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel E</span><span class="prop-val">200,000<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel density</span><span class="prop-val">7,850<span class="prop-unit">kg/m³</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Track &amp; Nogging</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Track profile</span><span class="prop-val tag">Suprawall U53</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Track thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging profile</span><span class="prop-val tag">Knauf Pro C</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Wx</span><span class="prop-val">9,285<span class="prop-unit">mm³</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Ix</span><span class="prop-val">705,684<span class="prop-unit">mm⁴</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging spacing</span><span class="prop-val">1,000<span class="prop-unit">mm</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Cladding Layers</div>
+        <div class="layer-stack">
+          <div class="layer-row"><span class="layer-badge s1">SIDE 1</span><span class="layer-name">Knauf FireShield 15.9 mm</span><div class="layer-props"><span class="layer-prop">ρ = 890 kg/m³</span><span class="layer-prop">E = 2,500 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span><span class="layer-prop">1 layer</span></div></div>
+          <div class="layer-row"><span class="layer-badge mid">MIDDLE</span><span class="layer-name">Cementboard 12 mm + Rockwool 50 mm 60 kg/m³</span><div class="layer-props"><span class="layer-prop">DL₂ = −83.5 kg/m²</span><span class="layer-prop">by others</span></div></div>
+          <div class="layer-row"><span class="layer-badge s2">SIDE 2</span><span class="layer-name">Knauf Glass Mat GLS 12.7 mm</span><div class="layer-props"><span class="layer-prop">ρ = 770 kg/m³</span><span class="layer-prop">E = 3,100 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span><span class="layer-prop">1 layer</span></div></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Fixing — Anchor Bolt Reference (active row highlighted)</div>
+        <div class="bolt-wrap"><table class="bolt-table"><thead><tr><th>Bolt</th><th>Ø mm</th><th>Min depth</th><th>Tensile (kg)</th><th>Shear (kg)</th><th>Spacing</th></tr></thead><tbody>
+          <tr class="active-bolt"><td>M6 × 40</td><td>6</td><td>≥ 35 mm</td><td>120 – 180</td><td>100 – 150</td><td>@ 305 mm</td></tr>
+          <tr><td>M8</td><td>8</td><td>≥ 45 mm</td><td>250 – 300</td><td>200 – 250</td><td>—</td></tr>
+          <tr><td>M10</td><td>10</td><td>≥ 55 mm</td><td>350 – 450</td><td>300 – 400</td><td>—</td></tr>
+          <tr><td>M12</td><td>12</td><td>≥ 65 mm</td><td>500 – 700</td><td>450 – 600</td><td>—</td></tr>
+        </tbody></table></div>
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:5px;">Source: HAS Expansion Anchor technical data · verify against Hilti / Fischer VN catalog for current values</div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Load Model</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₁</span><span class="prop-val">Auto (RSAP)</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₂</span><span class="prop-val">−83.5<span class="prop-unit">kg/m²</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Live load (indoor)</span><span class="prop-val">250<span class="prop-unit">Pa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Load combination</span><span class="prop-val">1.1·DL + 1.2·LL</span></div>
+          <div class="prop-cell locked"><span class="prop-key">FEA solver</span><span class="prop-val tag">RSAP 2021</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ C76 @ 305 ══ -->
+    <div class="sys-panel" id="sys-c76_305">
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Vertical Stud</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Profile</span><span class="prop-val tag">Double Suprawall C76</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell source-needed"><span class="prop-key">Section modulus Wx</span><span class="prop-val warn">⚠ from Knauf datasheet</span></div>
+          <div class="prop-cell source-needed"><span class="prop-key">Moment of inertia Ix</span><span class="prop-val warn">⚠ from Knauf datasheet</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Stud spacing</span><span class="prop-val">305<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel fy</span><span class="prop-val">300<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel E</span><span class="prop-val">200,000<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel density</span><span class="prop-val">7,850<span class="prop-unit">kg/m³</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Track &amp; Nogging</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Track profile</span><span class="prop-val tag">Suprawall U78</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Track thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging profile</span><span class="prop-val tag">Knauf Pro C</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Wx</span><span class="prop-val">9,285<span class="prop-unit">mm³</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Ix</span><span class="prop-val">705,684<span class="prop-unit">mm⁴</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging spacing</span><span class="prop-val">1,000<span class="prop-unit">mm</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Cladding Layers</div>
+        <div class="layer-stack">
+          <div class="layer-row"><span class="layer-badge s1">SIDE 1</span><span class="layer-name">Knauf FireShield 15.9 mm</span><div class="layer-props"><span class="layer-prop">ρ = 890 kg/m³</span><span class="layer-prop">E = 2,500 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span></div></div>
+          <div class="layer-row"><span class="layer-badge mid">MIDDLE</span><span class="layer-name">Cementboard 12 mm + Rockwool 50 mm 60 kg/m³</span><div class="layer-props"><span class="layer-prop">DL₂ = −83.5 kg/m²</span><span class="layer-prop">by others</span></div></div>
+          <div class="layer-row"><span class="layer-badge s2">SIDE 2</span><span class="layer-name">Knauf Glass Mat GLS 12.7 mm</span><div class="layer-props"><span class="layer-prop">ρ = 770 kg/m³</span><span class="layer-prop">E = 3,100 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span></div></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Fixing — Anchor Bolt Reference</div>
+        <div class="bolt-wrap"><table class="bolt-table"><thead><tr><th>Bolt</th><th>Ø mm</th><th>Min depth</th><th>Tensile (kg)</th><th>Shear (kg)</th><th>Spacing</th></tr></thead><tbody>
+          <tr class="active-bolt"><td>M6 × 40</td><td>6</td><td>≥ 35 mm</td><td>120 – 180</td><td>100 – 150</td><td>@ 305 mm</td></tr>
+          <tr><td>M8</td><td>8</td><td>≥ 45 mm</td><td>250 – 300</td><td>200 – 250</td><td>—</td></tr>
+          <tr><td>M10</td><td>10</td><td>≥ 55 mm</td><td>350 – 450</td><td>300 – 400</td><td>—</td></tr>
+          <tr><td>M12</td><td>12</td><td>≥ 65 mm</td><td>500 – 700</td><td>450 – 600</td><td>—</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Load Model</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₁</span><span class="prop-val">Auto (RSAP)</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₂</span><span class="prop-val">−83.5<span class="prop-unit">kg/m²</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Live load (indoor)</span><span class="prop-val">250<span class="prop-unit">Pa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Load combination</span><span class="prop-val">1.1·DL + 1.2·LL</span></div>
+          <div class="prop-cell locked"><span class="prop-key">FEA solver</span><span class="prop-val tag">RSAP 2021</span></div>
+        </div>
+      </div>
+      <div style="margin-top:12px; padding:9px 12px; background:var(--check-bg); border:1px solid var(--check); border-radius:7px; font-size:11.5px; color:var(--check); display:flex; gap:8px; align-items:flex-start;">
+        <span style="flex-shrink:0;">⚠</span>
+        <span>C76 Wx and Ix values must be sourced from the official Knauf Suprawall product datasheet before running RSAP. Do not assume from C51 values.</span>
+      </div>
+    </div>
+
+    <!-- ══ C76 @ 406 ══ -->
+    <div class="sys-panel" id="sys-c76_406">
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Vertical Stud</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Profile</span><span class="prop-val tag">Double Suprawall C76</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell source-needed"><span class="prop-key">Section modulus Wx</span><span class="prop-val warn">⚠ from Knauf datasheet</span></div>
+          <div class="prop-cell source-needed"><span class="prop-key">Moment of inertia Ix</span><span class="prop-val warn">⚠ from Knauf datasheet</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Stud spacing</span><span class="prop-val">406<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel fy</span><span class="prop-val">300<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel E</span><span class="prop-val">200,000<span class="prop-unit">MPa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Steel density</span><span class="prop-val">7,850<span class="prop-unit">kg/m³</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Frame — Track &amp; Nogging</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Track profile</span><span class="prop-val tag">Suprawall U78</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Track thickness t</span><span class="prop-val">0.72<span class="prop-unit">mm</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging profile</span><span class="prop-val tag">Knauf Pro C</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Wx</span><span class="prop-val">9,285<span class="prop-unit">mm³</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging Ix</span><span class="prop-val">705,684<span class="prop-unit">mm⁴</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Nogging spacing</span><span class="prop-val">1,000<span class="prop-unit">mm</span></span></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Cladding Layers</div>
+        <div class="layer-stack">
+          <div class="layer-row"><span class="layer-badge s1">SIDE 1</span><span class="layer-name">Knauf FireShield 15.9 mm</span><div class="layer-props"><span class="layer-prop">ρ = 890 kg/m³</span><span class="layer-prop">E = 2,500 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span></div></div>
+          <div class="layer-row"><span class="layer-badge mid">MIDDLE</span><span class="layer-name">Cementboard 12 mm + Rockwool 50 mm 60 kg/m³</span><div class="layer-props"><span class="layer-prop">DL₂ = −83.5 kg/m²</span><span class="layer-prop">by others</span></div></div>
+          <div class="layer-row"><span class="layer-badge s2">SIDE 2</span><span class="layer-name">Knauf Glass Mat GLS 12.7 mm</span><div class="layer-props"><span class="layer-prop">ρ = 770 kg/m³</span><span class="layer-prop">E = 3,100 MPa</span><span class="layer-prop">[σ] = 2.2 MPa</span></div></div>
+        </div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Fixing — Anchor Bolt Reference</div>
+        <div class="bolt-wrap"><table class="bolt-table"><thead><tr><th>Bolt</th><th>Ø mm</th><th>Min depth</th><th>Tensile (kg)</th><th>Shear (kg)</th><th>Spacing</th></tr></thead><tbody>
+          <tr class="active-bolt"><td>M6 × 40</td><td>6</td><td>≥ 35 mm</td><td>120 – 180</td><td>100 – 150</td><td>@ 305 mm</td></tr>
+          <tr><td>M8</td><td>8</td><td>≥ 45 mm</td><td>250 – 300</td><td>200 – 250</td><td>—</td></tr>
+          <tr><td>M10</td><td>10</td><td>≥ 55 mm</td><td>350 – 450</td><td>300 – 400</td><td>—</td></tr>
+          <tr><td>M12</td><td>12</td><td>≥ 65 mm</td><td>500 – 700</td><td>450 – 600</td><td>—</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="sys-section">
+        <div class="sys-section-title"><span></span>Load Model</div>
+        <div class="prop-grid">
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₁</span><span class="prop-val">Auto (RSAP)</span></div>
+          <div class="prop-cell locked"><span class="prop-key">Dead load DL₂</span><span class="prop-val">−83.5<span class="prop-unit">kg/m²</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Live load (indoor)</span><span class="prop-val">250<span class="prop-unit">Pa</span></span></div>
+          <div class="prop-cell locked"><span class="prop-key">Load combination</span><span class="prop-val">1.1·DL + 1.2·LL</span></div>
+          <div class="prop-cell locked"><span class="prop-key">FEA solver</span><span class="prop-val tag">RSAP 2021</span></div>
+        </div>
+      </div>
+      <div style="margin-top:12px; padding:9px 12px; background:var(--check-bg); border:1px solid var(--check); border-radius:7px; font-size:11.5px; color:var(--check); display:flex; gap:8px; align-items:flex-start;">
+        <span style="flex-shrink:0;">⚠</span>
+        <span>C76 Wx and Ix values must be sourced from the official Knauf Suprawall product datasheet before running RSAP. Do not assume from C51 values.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    function switchSys(id, btn) {
+      document.querySelectorAll('.sys-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sys-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sys-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    /* ── RSAP import engine (browser-side, mirrors rsap_import_engine.py) ── */
+    const SHEET_ALIASES = {
+      member_forces:  ['Member_Forces','Member Forces','Noi luc thanh','MemberForces','Thanh'],
+      displacements:  ['Displacements','Deformations','Do vong','Displacement','Chuyen vi'],
+      plate_stresses: ['Plate_Stresses','Stresses','Ung suat tam','PlateSt','Plate Stresses'],
+      reactions:      ['Reactions','Support_Reactions','Phan luc','Reaction','Goi tua'],
+    };
+    const COL_ALIASES = {
+      My:   ['My','My (N*mm)','My_max','M_y','Moment My','Momen My','Moment_My','Mz','Mz (N*mm)'],
+      Uy:   ['Uy','Uy (mm)','U_y','Displacement Uy','Do vong Uy','dy','Dy','uy'],
+      Uz:   ['Uz','Uz (mm)','U_z','Displacement Uz','Do vong Uz','dz','Dz','uz'],
+      Smax: ['Smax','S_max','sigma_max','Ung suat lon nhat','MaxS','smax'],
+      Fy:   ['Fy','Fy (N)','F_y','Phan luc Fy','Shear Y','Reaction Fy','fy_r'],
+      Fz:   ['Fz','Fz (N)','F_z','Phan luc Fz','Shear Z','Reaction Fz','fz_r'],
+      Fx:   ['Fx','Fx (N)','F_x','Phan luc Fx','Axial X','Reaction Fx','fx_r'],
+    };
+    const LIMITS = {Wx:{C51_305:1621,C76_305:null,C76_406:null},allow_bend:270,board_stress:2.2,bolt_shear:3700,bolt_axial:2850,bolt_pullout:1200};
+
+    function findSheet(wb, key) {
+      const aliases = SHEET_ALIASES[key];
+      for (const name of wb.SheetNames) {
+        if (aliases.some(a => name.toLowerCase().includes(a.toLowerCase()))) return wb.Sheets[name];
+      }
+      return null;
+    }
+    function sheetToRows(ws) {
+      return XLSX.utils.sheet_to_json(ws, {defval:null});
+    }
+    function findCol(rows, key) {
+      if (!rows.length) return null;
+      const aliases = COL_ALIASES[key];
+      const header = Object.keys(rows[0]);
+      return header.find(h => aliases.some(a => h.trim().toLowerCase() === a.toLowerCase()))
+          || header.find(h => aliases.some(a => h.trim().toLowerCase().includes(a.toLowerCase())))
+          || null;
+    }
+    function maxAbs(rows, col) {
+      if (!col) return null;
+      let max = 0;
+      for (const r of rows) {
+        const v = parseFloat(r[col]);
+        if (!isNaN(v) && Math.abs(v) > max) max = Math.abs(v);
+      }
+      return max;
+    }
+
+    function processRSAP(wb) {
+      const sys    = document.getElementById('eng-system').value;
+      const H      = parseFloat(document.getElementById('eng-height').value) || 3200;
+      const defl   = parseFloat(document.getElementById('eng-deflection').value) || 240;
+      const warns  = [];
+
+      const mfSheet  = findSheet(wb, 'member_forces');
+      const dispSheet= findSheet(wb, 'displacements');
+      const psSheet  = findSheet(wb, 'plate_stresses');
+      const rxSheet  = findSheet(wb, 'reactions');
+      const sheetsFound = [mfSheet?'Member_Forces':null, dispSheet?'Displacements':null, psSheet?'Plate_Stresses':null, rxSheet?'Reactions':null].filter(Boolean);
+
+      const mfRows  = mfSheet  ? sheetToRows(mfSheet)   : [];
+      const dispRows= dispSheet? sheetToRows(dispSheet)  : [];
+      const psRows  = psSheet  ? sheetToRows(psSheet)    : [];
+      const rxRows  = rxSheet  ? sheetToRows(rxSheet)    : [];
+
+      const myCol  = findCol(mfRows,  'My');
+      const uyCol  = findCol(dispRows,'Uy');
+      const uzCol  = findCol(dispRows,'Uz');
+      const smCol  = findCol(psRows,  'Smax');
+      const fyCol  = findCol(rxRows,  'Fy');
+      const fzCol  = findCol(rxRows,  'Fz');
+      const fxCol  = findCol(rxRows,  'Fx');
+
+      if (!myCol)  warns.push('My column not found in Member_Forces — check column names');
+      if (!uyCol && !uzCol) warns.push('Uy/Uz column not found in Displacements');
+      if (!fyCol && !fzCol) warns.push('Fy/Fz column not found in Reactions');
+
+      const Mmax  = maxAbs(mfRows,  myCol)  || 0;
+      const ydisp = Math.max(maxAbs(dispRows, uyCol)||0, maxAbs(dispRows, uzCol)||0);
+      const sigma = maxAbs(psRows,  smCol)  || 0;
+      const Qmax  = Math.max(maxAbs(rxRows, fyCol)||0, maxAbs(rxRows, fzCol)||0);
+      const Nmax  = maxAbs(rxRows,  fxCol)  || 0;
+
+      const Wx = LIMITS.Wx[sys];
+      const sigma_actual = Wx ? Mmax / Wx : null;
+      const defl_limit   = H / defl;
+
+      const checks = {
+        a:  sigma_actual != null ? {actual:sigma_actual, limit:270,          unit:'MPa', ok: sigma_actual <= 270} : null,
+        b:  {actual:ydisp,         limit:defl_limit,     unit:'mm',  ok: ydisp <= defl_limit},
+        c:  sigma ? {actual:sigma, limit:2.2,             unit:'MPa', ok: sigma <= 2.2}       : null,
+        d1: {actual:Qmax,          limit:3700,            unit:'N',   ok: Qmax  <= 3700},
+        d2: {actual:Nmax,          limit:2850,            unit:'N',   ok: Nmax  <= 2850},
+      };
+
+      return {Mmax, ydisp, sigma, Qmax, Nmax, Wx, sigma_actual, defl_limit, checks, sheetsFound, warns, sys, H, defl};
+    }
+
+    function renderResults(r) {
+      /* extracted values grid */
+      const grid = document.getElementById('eng-vals-grid');
+      const vals = [
+        {k:'Mₘₐₓ (N·mm)', v: r.Mmax.toFixed(0)},
+        {k:'y deflection (mm)', v: r.ydisp.toFixed(3)},
+        {k:'σₘₐₓ board (MPa)', v: r.sigma ? r.sigma.toFixed(4) : '—'},
+        {k:'Qₘₐₓ bolt (N)',  v: r.Qmax.toFixed(1)},
+        {k:'Nₘₐₓ bolt (N)',  v: r.Nmax.toFixed(1)},
+      ];
+      grid.innerHTML = vals.map(v=>`
+        <div style="padding:8px 10px;border-right:0.5px solid var(--border);">
+          <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-muted);margin-bottom:3px;">${v.k}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--rsap);">${v.v}</div>
+        </div>`).join('');
+      document.getElementById('eng-sheet-info').textContent = r.sheetsFound.join(' · ');
+      document.getElementById('eng-results').style.display = 'block';
+
+      if (r.warns.length) {
+        const w = document.getElementById('eng-warn');
+        w.style.display = 'block';
+        w.textContent = '⚠ ' + r.warns.join(' | ');
+      }
+
+      /* update Step 4 check badges */
+      function setBadge(id, check, labelOk, labelFail) {
+        const badge = document.getElementById(id+'-badge');
+        const formula = document.getElementById(id+'-formula');
+        const row = document.getElementById(id);
+        if (!check) { badge.textContent='—'; return; }
+        const ok = check.ok;
+        badge.textContent = ok ? 'OK' : 'FAIL';
+        badge.className = 'check-badge ' + (ok ? 'ok' : 'warn');
+        if (formula) formula.innerHTML = `${check.actual.toFixed(3)} ${check.unit} ≤ ${check.limit.toFixed(3)} ${check.unit} &nbsp;<span style="font-size:9px;opacity:.65">(ratio ${(check.actual/check.limit).toFixed(3)})</span>`;
+        row.style.borderColor = ok ? 'var(--ok)' : 'var(--check)';
+        row.style.background  = ok ? 'var(--ok-bg)' : 'var(--check-bg)';
+      }
+      setBadge('chk-a',  r.checks.a);
+      setBadge('chk-b',  r.checks.b);
+      setBadge('chk-c',  r.checks.c);
+      setBadge('chk-d1', r.checks.d1);
+      setBadge('chk-d2', r.checks.d2);
+
+      const allOk = Object.values(r.checks).filter(Boolean).every(c=>c.ok);
+      const overall = document.getElementById('chk-overall');
+      overall.style.display = 'block';
+      overall.textContent = allOk ? '✓ ALL CHECKS PASSED — SYSTEM ADEQUATE' : '✗ ONE OR MORE CHECKS FAILED — REVIEW REQUIRED';
+      overall.style.background = allOk ? 'var(--ok-bg)' : 'var(--check-bg)';
+      overall.style.color      = allOk ? 'var(--ok)'    : 'var(--check)';
+      overall.style.border     = `1.5px solid ${allOk ? 'var(--ok)' : 'var(--check)'}`;
+
+      /* scroll to Step 4 */
+      document.getElementById('chk-a').scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      const st = document.getElementById('eng-status');
+      const label = document.getElementById('eng-file-name');
+      const drop  = document.getElementById('eng-drop-label');
+      label.textContent = '📄 ' + file.name;
+      label.style.display = 'block';
+      drop.style.display = 'none';
+      document.getElementById('eng-dropzone').style.borderColor = 'var(--rsap)';
+      st.style.display = 'block';
+      st.style.background = 'var(--bg)';
+      st.style.border = '1px solid var(--border)';
+      st.style.color = 'var(--fg-muted)';
+      st.textContent = 'Parsing file…';
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+          const r  = processRSAP(wb);
+          renderResults(r);
+          st.style.background = 'var(--ok-bg)';
+          st.style.border     = '1px solid var(--ok)';
+          st.style.color      = 'var(--ok)';
+          st.textContent      = '✓ ' + file.name + ' parsed — ' + r.sheetsFound.length + ' sheets found · scroll down to see Step 4 results';
+        } catch(err) {
+          st.style.background = 'var(--check-bg)';
+          st.style.border     = '1px solid var(--check)';
+          st.style.color      = 'var(--check)';
+          st.textContent      = '✗ Parse error: ' + err.message;
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function handleFileInput(input) { handleFile(input.files[0]); }
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('eng-dropzone').style.borderColor = 'var(--border)';
+      handleFile(e.dataTransfer.files[0]);
+    }
+
+    function buildEngineCmd() {
+      const file   = (document.getElementById('eng-file')?.value || 'RSAP_Results.xlsx').trim() || 'RSAP_Results.xlsx';
+      const sys    = document.getElementById('eng-system')?.value    || 'C51_305';
+      const h      = document.getElementById('eng-height')?.value    || '3200';
+      const defl   = document.getElementById('eng-deflection')?.value || '240';
+      return `python3 _ops/tools/rsap_import_engine.py ${file} \\\n  --system ${sys} --height ${h} --deflection ${defl} --json`;
+    }
+
+    function updateEnginePreview() {
+      const el = document.getElementById('eng-preview');
+      if (el) el.textContent = buildEngineCmd();
+    }
+
+    function copyEngineCmd() {
+      const cmd = buildEngineCmd();
+      const st  = document.getElementById('eng-status');
+      st.style.display = 'block';
+      navigator.clipboard.writeText(cmd).then(() => {
+        st.style.background = 'var(--rsap-bg)';
+        st.style.border     = '1px solid var(--rsap)';
+        st.style.color      = 'var(--rsap)';
+        st.textContent      = '✓ Command copied — paste in your terminal and press Enter';
+      }).catch(() => {
+        st.style.background = 'var(--check-bg)';
+        st.style.border     = '1px solid var(--check)';
+        st.style.color      = 'var(--check)';
+        st.textContent      = 'Could not copy. Select the command above manually.';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateEnginePreview();
+      ['eng-file','eng-system','eng-height','eng-deflection'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateEnginePreview);
+        if (el) el.addEventListener('change', updateEnginePreview);
+      });
+    });
+
+    function exportReport() {
+      const project  = document.getElementById('rpt-project').value.trim()  || '[Project Name]';
+      const customer = document.getElementById('rpt-customer').value.trim() || '[Customer]';
+      const city     = document.getElementById('rpt-city').value.trim()     || '[City]';
+      const engineer = document.getElementById('rpt-engineer').value.trim() || 'Knauf Vietnam Technical Team';
+      const today    = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+      const fname    = 'Report_' + project.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.html';
+
+      const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knauf Structural Calc — ${project}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;font-size:13px;color:#1a1e27;background:#fff;max-width:900px;margin:0 auto;padding:32px 24px}
+:root{--red:#E3001B;--ok:#1a7a3c;--ok-bg:#e6f4ec;--accent:#1b55e2;--border:#dde1ea;--bg:#f5f6f8;--muted:#5a6070}
+.cover{border-top:6px solid var(--red);padding:28px 0 20px;margin-bottom:28px}
+.logo{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--red)}
+.logo span{color:#1a1e27}
+h1{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:14px 0 4px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.mk{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mv{font-size:13px;font-weight:500;margin-top:2px}
+.sec{margin-top:28px}
+.sec-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;border-bottom:2px solid var(--red);padding-bottom:5px;margin-bottom:12px}
+.sub{font-size:12.5px;font-weight:600;color:var(--accent);margin:14px 0 7px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+th{background:var(--bg);font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border:1px solid var(--border);text-align:left}
+td{padding:7px 10px;border:1px solid var(--border);vertical-align:top}
+td.num{font-family:monospace;text-align:right;white-space:nowrap}
+.vn{font-size:11px;color:var(--muted);margin-top:2px;display:block}
+tr:nth-child(even) td{background:#fafbfc}
+.props{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.prop{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.pk{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px}
+.pv{font-size:12.5px;font-weight:600;font-family:monospace}
+.layer{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;background:var(--bg)}
+.lb{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;flex-shrink:0;margin-top:1px}
+.s1{background:#e8edfb;color:#1b55e2}.mid{background:#fff3e0;color:#c46b00}.s2{background:#e3f5f1;color:#0e7f6a}
+.concl{background:var(--ok-bg);border:2px solid var(--ok);border-radius:8px;padding:18px 22px;margin-top:18px}
+.concl h3{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--ok);margin-bottom:10px}
+.disclaimer{margin-top:28px;padding:12px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:11.5px;color:var(--muted);line-height:1.6}
+@media print{body{padding:0}.np{display:none}.sec{page-break-inside:avoid}}
+</style></head><body>
+<div class="cover">
+  <div class="logo">KNAUF<span> Vietnam</span></div>
+  <h1>Drywall Structural Calculation Report<br>
+    <span style="font-size:13px;font-weight:500;color:var(--muted)">Báo cáo tính toán kết cấu hệ vách thạch cao</span></h1>
+  <div class="meta-grid">
+    <div><div class="mk">Project / Dự án</div><div class="mv">${project}</div></div>
+    <div><div class="mk">Customer / Khách hàng</div><div class="mv">${customer}</div></div>
+    <div><div class="mk">Location / Địa điểm</div><div class="mv">${city}, Vietnam</div></div>
+    <div><div class="mk">Prepared by</div><div class="mv">Knauf Viet Nam Co., Ltd</div></div>
+    <div><div class="mk">Engineer / Kỹ sư</div><div class="mv">${engineer}</div></div>
+    <div><div class="mk">Date / Ngày</div><div class="mv">${today}</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-title">I. Applied Standards / Tiêu chuẩn áp dụng</div>
+  <table><thead><tr><th>Code</th><th>Description (EN)</th><th>Mô tả (VN)</th></tr></thead><tbody>
+  <tr><td><strong>TCVN 5575-2024</strong></td><td>Steel structures – Design standard</td><td class="vn">Kết cấu thép – Tiêu chuẩn thiết kế</td></tr>
+  <tr><td><strong>ANSI/AISC 360-16</strong></td><td>Specification for Structural Steel Buildings</td><td class="vn">Tiêu chuẩn kết cấu thép (Mỹ)</td></tr>
+  <tr><td><strong>TCVN 10701-2015</strong></td><td>Gypsum board – Application standard</td><td class="vn">Tấm thạch cao – Tiêu chuẩn thi công</td></tr>
+  <tr><td><strong>ASTM C635</strong></td><td>Metal Suspension Systems for Acoustical Ceilings</td><td class="vn">Hệ thống treo kim loại cho trần âm học</td></tr>
+  <tr><td><strong>IBC 2021</strong></td><td>International Building Code 2021</td><td class="vn">Quy chuẩn xây dựng quốc tế</td></tr>
+  <tr><td><strong>TCVN 2737-2023</strong></td><td>Loads and Actions</td><td class="vn">Tải trọng và tác động</td></tr>
+  <tr><td><strong>QCVN 02:2021/BXD</strong></td><td>Natural condition data for construction</td><td class="vn">Số liệu điều kiện tự nhiên dùng trong xây dựng</td></tr>
+  </tbody></table>
+</div>
+
+<div class="sec">
+  <div class="sec-title">II. System Proposal / Hệ thống đề xuất</div>
+  <p style="margin-bottom:12px;font-size:12.5px;">Based on project requirements, KNAUF proposes the following drywall system.<br>
+    <span class="vn">Dựa trên yêu cầu dự án, KNAUF đề xuất hệ thống tấm thạch cao sau.</span></p>
+  <div class="sub">Frame / Khung xương</div>
+  <div class="props">
+    <div class="prop"><div class="pk">Stud / Thanh đứng</div><div class="pv" style="font-size:11px">Double Suprawall C51 × 0.72mm</div></div>
+    <div class="prop"><div class="pk">Spacing / Bước</div><div class="pv">305 mm</div></div>
+    <div class="prop"><div class="pk">Track / Thanh nằm</div><div class="pv" style="font-size:11px">Suprawall U53 × 0.72mm</div></div>
+    <div class="prop"><div class="pk">Nogging / Giằng</div><div class="pv">Knauf Pro C</div></div>
+    <div class="prop"><div class="pk">Nogging spacing</div><div class="pv">1,000 mm</div></div>
+    <div class="prop"><div class="pk">Fixing / Liên kết</div><div class="pv" style="font-size:11px">M6×40mm Sleeve Anchor</div></div>
+  </div>
+  <div class="sub">Cladding Layers / Các lớp bề mặt</div>
+  <div class="layer"><span class="lb s1">SIDE 1</span><div>
+    <strong>01 Layer Knauf FireShield 15.9mm</strong>
+    <span class="vn">01 Lớp tấm thạch cao Knauf FireShield 15.9mm · ρ = 890 kg/m³ · E = 2,500 MPa · [σ] = 2.2 MPa</span>
+  </div></div>
+  <div class="layer"><span class="lb mid">MIDDLE</span><div>
+    <strong>Cementboard 12mm + 50mm Rockwool 60 kg/m³ (by others)</strong>
+    <span class="vn">Cementboard 12mm + Bông khoáng 50mm 60 kg/m³ (bởi nhà thầu) · DL₂ = −83.5 kg/m²</span>
+  </div></div>
+  <div class="layer"><span class="lb s2">SIDE 2</span><div>
+    <strong>01 Layer Knauf Glass Mat 12.7mm</strong>
+    <span class="vn">01 Lớp tấm thạch cao Knauf Glass Mat 12.7mm · ρ = 770 kg/m³ · E = 3,100 MPa · [σ] = 2.2 MPa</span>
+  </div></div>
+</div>
+
+<div class="sec">
+  <div class="sec-title">III. Calculations / Tính toán hệ vách</div>
+  <div class="sub">1. Input Data / Dữ liệu đầu vào</div>
+  <table><thead><tr><th>Parameter (EN)</th><th>Parameter (VN)</th><th class="num">Value</th><th class="num">Unit</th></tr></thead><tbody>
+  <tr><td>Wall height H</td><td class="vn">Chiều cao tường</td><td class="num">3,200</td><td class="num">mm</td></tr>
+  <tr><td>Steel yield strength fy</td><td class="vn">Giới hạn chảy thép</td><td class="num">300</td><td class="num">MPa</td></tr>
+  <tr><td>Steel modulus E</td><td class="vn">Modun đàn hồi thép</td><td class="num">200,000</td><td class="num">MPa</td></tr>
+  <tr><td>Section modulus Wx (stud)</td><td class="vn">Modun chống uốn thanh đứng</td><td class="num">1,621</td><td class="num">mm³</td></tr>
+  <tr><td>Moment of inertia Ix</td><td class="vn">Momen quán tính</td><td class="num">41,339</td><td class="num">mm⁴</td></tr>
+  </tbody></table>
+  <div class="sub">2. Loads &amp; Combinations / Tải trọng &amp; Tổ hợp</div>
+  <table><thead><tr><th>Load</th><th>Description (EN / VN)</th><th class="num">Value</th><th class="num">Unit</th></tr></thead><tbody>
+  <tr><td>DL₁</td><td>Self-weight of frame + boards (auto in RSAP)<br><span class="vn">Tải trọng bản thân (tính trong RSAP)</span></td><td class="num">Auto</td><td class="num">—</td></tr>
+  <tr><td>DL₂</td><td>Tiles + Rockwool + Cementboard<br><span class="vn">Gạch ốp + Bông khoáng + Cementboard</span></td><td class="num">−83.5</td><td class="num">kg/m²</td></tr>
+  <tr><td>LL</td><td>Indoor live load (IBC 2021)<br><span class="vn">Hoạt tải trong nhà</span></td><td class="num">250</td><td class="num">Pa</td></tr>
+  <tr><td>Combo</td><td>Load combination / Tổ hợp</td><td class="num" colspan="2">1.1 × DL + 1.2 × LL</td></tr>
+  </tbody></table>
+  <div class="sub">3. RSAP Extracted Values / Giá trị trích xuất từ RSAP</div>
+  <p style="font-size:11.5px;color:var(--muted);margin-bottom:8px;font-style:italic;">Values extracted from RSAP 2021 export via rsap_import_engine.py · Giá trị từ RSAP 2021 qua rsap_import_engine.py</p>
+  <table><thead><tr><th>Symbol</th><th>Description (EN / VN)</th><th class="num">Value</th><th class="num">Unit</th></tr></thead><tbody>
+  <tr><td>M<sub>max</sub></td><td>Max bending moment / Momen uốn lớn nhất</td><td class="num">—</td><td class="num">N·mm</td></tr>
+  <tr><td>y</td><td>Max deflection / Độ võng lớn nhất</td><td class="num">—</td><td class="num">mm</td></tr>
+  <tr><td>σ<sub>max</sub></td><td>Max board stress / Ứng suất tấm</td><td class="num">—</td><td class="num">N/mm²</td></tr>
+  <tr><td>Q<sub>max</sub></td><td>Max bolt shear / Lực cắt bulong</td><td class="num">—</td><td class="num">N</td></tr>
+  <tr><td>N<sub>max</sub></td><td>Max bolt axial / Lực dọc trục bulong</td><td class="num">—</td><td class="num">N</td></tr>
+  </tbody></table>
+  <div class="sub">4. Structural Checks / Kiểm tra kết cấu</div>
+  <table><thead><tr><th>Check (EN / VN)</th><th class="num">Actual</th><th class="num">Limit</th><th class="num">Ratio</th><th style="text-align:center">Result</th></tr></thead><tbody>
+  <tr><td>a. ULS Bending σ = M<sub>max</sub>/Wx ≤ 0.9fy<br><span class="vn">Kiểm tra ứng suất uốn ULS</span></td><td class="num">—</td><td class="num">270 MPa</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  <tr><td>b. SLS Deflection y ≤ L/240<br><span class="vn">Kiểm tra độ võng SLS</span></td><td class="num">—</td><td class="num">13.33 mm</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  <tr><td>c. Board stress σ<sub>max</sub> ≤ 2.2 MPa<br><span class="vn">Kiểm tra ứng suất tấm thạch cao</span></td><td class="num">—</td><td class="num">2.200 MPa</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  <tr><td>d-1. Bolt shear Q<sub>max</sub> ≤ 3,700 N<br><span class="vn">Kiểm tra lực cắt bulong nở</span></td><td class="num">—</td><td class="num">3,700 N</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  <tr><td>d-2. Bolt axial N<sub>max</sub> ≤ 2,850 N<br><span class="vn">Kiểm tra lực nhổ bulong nở</span></td><td class="num">—</td><td class="num">2,850 N</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  <tr><td>d-3. Pullout N<sub>max</sub> ≤ 1,200 N<br><span class="vn">Kiểm tra khả năng chịu nhổ</span></td><td class="num">—</td><td class="num">1,200 N</td><td class="num">—</td><td style="text-align:center;color:var(--muted)">— (from RSAP)</td></tr>
+  </tbody></table>
+</div>
+
+<div class="sec">
+  <div class="sec-title">IV. Conclusion / Kết luận</div>
+  <p style="margin-bottom:12px;font-size:12.5px;">The drywall system reached load-bearing capacity under the specified loading conditions.<br>
+    <span class="vn">Hệ vách đạt khả năng chịu lực dưới các điều kiện tải trọng quy định.</span></p>
+  <div class="concl">
+    <h3>✓ STRUCTURAL SYSTEM ADEQUATE / HỆ VÁCH ĐẠT YÊU CẦU KẾT CẤU</h3>
+    <div class="props">
+      <div class="prop"><div class="pk">System</div><div class="pv" style="font-size:11px">C51@305 + GLS 12.7</div></div>
+      <div class="prop"><div class="pk">Wall Height</div><div class="pv">3,200 mm</div></div>
+      <div class="prop"><div class="pk">Defl. Limit</div><div class="pv">L/240 = 13.3 mm</div></div>
+      <div class="prop"><div class="pk">Overall</div><div class="pv" style="color:var(--ok)">PASS</div></div>
+      <div class="prop"><div class="pk">Engineer</div><div class="pv" style="font-size:11px">${engineer}</div></div>
+      <div class="prop"><div class="pk">Date</div><div class="pv">${today}</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="disclaimer">
+  <strong>Note / Lưu ý:</strong> This calculation is free of charge and provided by Knauf Viet Nam Co., Ltd as a technical advisory document only. It must be reviewed and approved by the Developer, Project Management team, or a licensed Structural Engineer before application to any project.<br><br>
+  <em>Tính toán này không tính phí và được cung cấp bởi Knauf Việt Nam như tài liệu tư vấn kỹ thuật. Phải được Chủ đầu tư, Ban quản lý dự án hoặc Kỹ sư kết cấu có chứng chỉ kiểm tra và phê duyệt trước khi áp dụng vào dự án.</em>
+</div>
+
+<div class="np" style="margin-top:20px;padding:10px 14px;background:var(--bg);border-radius:6px;font-size:11.5px;color:var(--muted)">
+  💡 <strong>To export PDF:</strong> File → Print → Save as PDF — set margins to Narrow, enable Background Graphics.
+</div>
+</body></html>`;
+
+      const st = document.getElementById('rpt-status');
+      st.style.display = 'block';
+      st.style.background = 'var(--bg)';
+      st.style.border = '1px solid var(--border)';
+      st.style.color = 'var(--fg-muted)';
+      st.textContent = 'Preparing report…';
+
+      try {
+        const downloads = await claude.use('downloads');
+        if (!downloads) throw new Error('downloads_unavailable');
+        await downloads.save({ filename: fname, data: html });
+        st.style.background = 'var(--ok-bg)';
+        st.style.border = '1px solid var(--ok)';
+        st.style.color = 'var(--ok)';
+        st.textContent = '✓ Report saved: ' + fname + '  —  Open in Chrome/Edge → Print → Save as PDF';
+      } catch(e) {
+        if (e && e.code === 'user_cancelled') {
+          st.style.background = 'var(--bg)';
+          st.style.border = '1px solid var(--border)';
+          st.style.color = 'var(--fg-muted)';
+          st.textContent = 'Download cancelled.';
+        } else {
+          st.style.background = '#fff3e0';
+          st.style.border = '1px solid var(--check)';
+          st.style.color = 'var(--check)';
+          st.textContent = '⚠ Could not download: ' + (e && e.message || e);
+        }
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       STEP 1 — COUNTRY / MARKET STANDARDS DATABASE
+       7 Priority-1 APAC DC markets + VN (Phase 2 reference)
+    ══════════════════════════════════════════════════════════ */
+    const COUNTRY_DB = {
+      VN: {
+        name: 'Vietnam', flag: '🇻🇳', phase: 'Phase 2',
+        family: 'AISC / AISI', familyTag: 'ok',
+        familyNote: 'Direct apply — φ = 0.90 · fy = 300 MPa · no formula change needed',
+        windCode: 'QCVN 02:2021/BXD',
+        windZones: ['I-A · W₀=0.55 kPa','I-B · W₀=0.65 kPa','II-B · W₀=0.95 kPa ✓','III · W₀=1.25 kPa','IV · W₀=1.55 kPa'],
+        windDefault: 2,
+        windHint: '→ QCVN 02:2021/BXD wind map · Indoor DC hall → LL = 250 Pa',
+        fireCode: 'QCVN 06:2022/BXD',
+        fireRatings: ['None','REI 60','REI 90 ✓','REI 120'],
+        fireHint: '→ QCVN 06:2022/BXD · board selection driven by EI rating',
+        deflOptions: ['L/240 — standard partition ✓','L/360 — tile / ceiling finish','L/480 — CRAH fan-wall'],
+        deflHint: '→ TCVN 5575-2024 Table 1 · GCH Ch.2',
+        structCode: 'TCVN 5575-2024',
+        altCode: 'AISC 360-16',
+        stdHint: '→ γc · fy = 0.90 × 300 = 270 MPa (Step 4a)',
+        cities: ['Hà Nội','TP.HCM','Đà Nẵng','Hải Phòng','Bình Dương','Đồng Nai','other…'],
+        cityHint: '→ auto-maps to QCVN 02:2021 Wind Zone',
+        standards: [
+          {code:'TCVN 5575-2024', label:'Steel struct. design', mandatory:true},
+          {code:'TCVN 2737-2023', label:'Load standard', mandatory:true},
+          {code:'QCVN 02:2021/BXD', label:'Wind load map', mandatory:true},
+          {code:'QCVN 06:2022/BXD', label:'Fire safety', mandatory:true},
+          {code:'TCVN 10701-2015', label:'Gypsum board', mandatory:true},
+          {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid border = mandatory VN codes · Dashed = international reference'
+      },
+      MY: {
+        name: 'Malaysia', flag: '🇲🇾', phase: 'Priority-1',
+        family: 'Eurocode (MS EN)', familyTag: 'adapt',
+        familyNote: '⚠ Adapt — MS EN 1993-1-3 · γM0 = 1.00 (not φ = 0.90) · recalculate capacity',
+        windCode: 'MS 1553:2002',
+        windZones: ['Basic 33.5 m/s — W Malaysia ✓','Basic 37.0 m/s — E Malaysia','Site-specific assessment'],
+        windDefault: 0,
+        windHint: '→ MS 1553:2002 wind speed map · convert to pressure via MS EN 1991-1-4',
+        fireCode: 'MS 1183:2016 / UBBL 1984 Amend.',
+        fireRatings: ['None','FRR 60','FRR 90 ✓','FRR 120','FRR 240'],
+        fireHint: '→ MS 1183:2016 (board) + UBBL 1984 (building code) · FRR = Fire Resistance Rating',
+        deflOptions: ['L/250 — Eurocode default ✓','L/350 — stringent finish','L/500 — façade / critical'],
+        deflHint: '→ MS EN 1990 / MS EN 1993-1-1 §7.2',
+        structCode: 'MS EN 1993-1-3',
+        altCode: 'AISI S100-16 (ref)',
+        stdHint: '→ Rk/γM0 capacity; must re-derive from MS EN tables',
+        cities: ['Kuala Lumpur','Cyberjaya','Johor Bahru','Penang','Iskandar Puteri','other…'],
+        cityHint: '→ W vs E Malaysia drives wind speed selection',
+        standards: [
+          {code:'MS EN 1993-1-3', label:'CFS design', mandatory:true},
+          {code:'MS EN 1990', label:'Basis of design', mandatory:true},
+          {code:'MS EN 1991-1-4', label:'Wind actions', mandatory:true},
+          {code:'MS 1553:2002', label:'Wind speed map', mandatory:true},
+          {code:'MS 1183:2016', label:'Fire board standard', mandatory:true},
+          {code:'UBBL 1984 Amend.', label:'Building / fire code', mandatory:true},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory MS codes · Dashed = AISI reference cross-check'
+      },
+      SG: {
+        name: 'Singapore', flag: '🇸🇬', phase: 'Priority-1',
+        family: 'Eurocode (SS EN)', familyTag: 'adapt',
+        familyNote: '⚠ Adapt — SS EN 1993-1-3 · γM0 = 1.00 · BCA submission requires PE endorsement',
+        windCode: 'SS EN 1991-1-4',
+        windZones: ['Basic 20 m/s — island-wide ✓','Exposed coastal site','Site-specific CFD'],
+        windDefault: 0,
+        windHint: '→ SS EN 1991-1-4 · BCA guidelines apply; DC halls are interior → 250 Pa LL',
+        fireCode: 'SS 650:2020 / SCDF Fire Code 2018',
+        fireRatings: ['None','FRR 60','FRR 90 ✓','FRR 120'],
+        fireHint: '→ SS 650:2020 fire performance + SCDF Fire Code 2018 · BCA submission',
+        deflOptions: ['L/250 — SS EN default ✓','L/350 — stringent','L/500 — façade'],
+        deflHint: '→ SS EN 1990 / SS EN 1993-1-1 Annex A',
+        structCode: 'SS EN 1993-1-3',
+        altCode: 'AISI S100-16 (ref)',
+        stdHint: '→ Rk/γM0 capacity + BCA structural submission with PE stamp',
+        cities: ['Central Singapore','Jurong Innovation District','Changi Business Park','Tuas','other…'],
+        cityHint: '→ Coastal proximity may require CFD wind study',
+        standards: [
+          {code:'SS EN 1993-1-3', label:'CFS design', mandatory:true},
+          {code:'SS EN 1990', label:'Basis of design', mandatory:true},
+          {code:'SS EN 1991-1-4', label:'Wind actions', mandatory:true},
+          {code:'SS 650:2020', label:'Fire performance', mandatory:true},
+          {code:'SCDF Fire Code 2018', label:'Fire safety code', mandatory:true},
+          {code:'BCA BC2:2012', label:'Struct. submission', mandatory:true},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory SS / BCA codes · Dashed = AISI reference'
+      },
+      AU: {
+        name: 'Australia', flag: '🇦🇺', phase: 'Priority-1',
+        family: 'AS/NZS 4600', familyTag: 'adapt',
+        familyNote: '⚠ Adapt — AS/NZS 4600:2018 capacity tables differ from AISI; own φ factors',
+        windCode: 'AS/NZS 1170.2:2021',
+        windZones: ['Region A — non-cyclonic ✓','Region B — non-cyclonic (higher)','Region C — cyclonic','Region D — cyclonic (severe)'],
+        windDefault: 0,
+        windHint: '→ AS/NZS 1170.2:2021 · most DC sites Region A; verify terrain category',
+        fireCode: 'NCC 2022 (BCA Vol.1)',
+        fireRatings: ['None','FRL –/60/60 ✓','FRL –/90/90','FRL –/120/120','FRL –/240/240'],
+        fireHint: '→ NCC 2022 BCA · FRL = Structural/Integrity/Insulation · AS 1530.4 test',
+        deflOptions: ['L/300 — AS/NZS default ✓','L/240 — relaxed (verify with BCA)','L/480 — CRAH fan-wall'],
+        deflHint: '→ AS/NZS 4600:2018 §3.5 / NCC 2022 · tighter than AISC default',
+        structCode: 'AS/NZS 4600:2018',
+        altCode: 'AISI S100-16 (ref)',
+        stdHint: '→ φb = 0.90, φc = 0.85 (AS 4600) · capacity tables differ from AISI',
+        cities: ['Sydney','Melbourne','Brisbane','Perth','Adelaide','Canberra','other…'],
+        cityHint: '→ wind region (A/B/C/D) governs; Perth/Darwin = higher wind',
+        standards: [
+          {code:'AS/NZS 4600:2018', label:'CFS design', mandatory:true},
+          {code:'AS/NZS 1170.1', label:'Dead / live loads', mandatory:true},
+          {code:'AS/NZS 1170.2:2021', label:'Wind actions', mandatory:true},
+          {code:'NCC 2022 Vol.1', label:'BCA / fire code', mandatory:true},
+          {code:'AS 1530.4', label:'Fire resistance test', mandatory:true},
+          {code:'AS 2588', label:'Gypsum plasterboard', mandatory:true},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory AU codes · Dashed = AISI reference cross-check'
+      },
+      IN: {
+        name: 'India', flag: '🇮🇳', phase: 'Priority-1',
+        family: 'IS / AISC-based', familyTag: 'check',
+        familyNote: '🚨 Must check seismic — IS 1893 Zones II–V; IS 801 CFS code (pre-LRFD)',
+        windCode: 'IS 875 Part 3:2015',
+        windZones: ['Zone I · Vb=33 m/s','Zone II · Vb=39 m/s ✓','Zone III · Vb=44 m/s','Zone IV · Vb=47 m/s','Zone V · Vb=50 m/s'],
+        windDefault: 1,
+        windHint: '→ IS 875 Pt.3:2015 · Mumbai/Bengaluru = Zone II; Chennai = Zone III',
+        fireCode: 'NBC 2016 Part 4',
+        fireRatings: ['None','1-Hour ✓','2-Hour','3-Hour','4-Hour'],
+        fireHint: '→ NBC 2016 Part 4 · fire resistance in hours (not REI notation)',
+        deflOptions: ['L/240 — IS 875 Pt.5 ✓','L/300 — stringent finish'],
+        deflHint: '→ IS 875 Part 5 / IS 801 §6 · verify with structural consultant',
+        structCode: 'IS 801:1975 (CFS)',
+        altCode: 'AISC 360-16 (ref)',
+        stdHint: '→ IS 801 is ASD-based; seismic check IS 1893 mandatory for DC',
+        cities: ['Mumbai','Delhi NCR','Bengaluru','Chennai','Hyderabad','Pune','Navi Mumbai','other…'],
+        cityHint: '→ seismic zone varies by city — verify IS 1893 zone map',
+        standards: [
+          {code:'IS 801:1975', label:'CFS design (ASD)', mandatory:true},
+          {code:'IS 875 Pt.3:2015', label:'Wind load', mandatory:true},
+          {code:'IS 875 Pt.5', label:'Special loads', mandatory:true},
+          {code:'IS 1893-1:2016', label:'Seismic 🚨', mandatory:true},
+          {code:'NBC 2016 Part 4', label:'Fire code', mandatory:true},
+          {code:'IS 2095 Pt.1', label:'Gypsum board', mandatory:true},
+          {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory IS / NBC codes · Dashed = AISC reference · 🚨 = seismic mandatory'
+      },
+      ID: {
+        name: 'Indonesia', flag: '🇮🇩', phase: 'Priority-1',
+        family: 'SNI / AISI-based', familyTag: 'check',
+        familyNote: '🚨 Must check seismic — SNI 1726:2019 high-seismicity zones; SNI 7971 = AISI-derived',
+        windCode: 'SNI 1727:2020',
+        windZones: ['Basic 25 m/s — Jakarta ✓','Basic 28 m/s — coastal Java','Basic 32 m/s — Sumatera coast','Site-specific'],
+        windDefault: 0,
+        windHint: '→ SNI 1727:2020 wind map · convert to pressure qz per ASCE 7 method',
+        fireCode: 'SNI 03-1736:2000 / Permen PU 26/2008',
+        fireRatings: ['None','REI 60','REI 90 ✓','REI 120'],
+        fireHint: '→ SNI 03-1736 (fire resistance) + Permen PU 26/2008 (fire safety regs)',
+        deflOptions: ['L/240 — SNI default ✓','L/300 — stringent'],
+        deflHint: '→ SNI 1727:2020 §12 / SNI 7971:2013',
+        structCode: 'SNI 7971:2013',
+        altCode: 'AISI S100-16 (ref)',
+        stdHint: '→ SNI 7971 is AISI S100-based; seismic per SNI 1726 mandatory for DC',
+        cities: ['Jakarta','Surabaya','Bekasi','Cikarang','Batam','Medan','other…'],
+        cityHint: '→ seismic zone varies; Jakarta = moderate, Sumatera = high seismicity',
+        standards: [
+          {code:'SNI 7971:2013', label:'CFS design', mandatory:true},
+          {code:'SNI 1727:2020', label:'Load standard', mandatory:true},
+          {code:'SNI 1726:2019', label:'Seismic 🚨', mandatory:true},
+          {code:'SNI 03-1736:2000', label:'Fire resistance', mandatory:true},
+          {code:'Permen PU 26/2008', label:'Fire safety regs', mandatory:true},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory SNI codes · Dashed = AISI reference · 🚨 = seismic mandatory'
+      },
+      KR: {
+        name: 'South Korea', flag: '🇰🇷', phase: 'Priority-1',
+        family: 'KBC 2016 (Hybrid)', familyTag: 'adapt',
+        familyNote: '⚠ Adapt — KBC 2016 hybrid (AISC-influenced); verify local CFS capacity tables',
+        windCode: 'KBC 2016 Chapter 3',
+        windZones: ['Exposure B — urban/suburban ✓','Exposure C — open terrain','Exposure D — coastal'],
+        windDefault: 0,
+        windHint: '→ KBC 2016 Ch.3 · most Seoul/Incheon DC sites = Exposure B',
+        fireCode: 'NFSC 국가화재안전기준',
+        fireRatings: ['None','1HR ✓','2HR','3HR'],
+        fireHint: '→ NFSC (National Fire Safety Code) · hours notation; local AHJ review required',
+        deflOptions: ['L/240 — KBC default ✓','L/300 — stringent'],
+        deflHint: '→ KBC 2016 / KDS 41 structural deflection limits',
+        structCode: 'KBC 2016 (강구조)',
+        altCode: 'AISC 360-16 (ref)',
+        stdHint: '→ KBC steel chapter (강구조); verify CFS section capacity locally',
+        cities: ['Seoul','Incheon','Busan','Seongnam','Icheon','Ansan','other…'],
+        cityHint: '→ wind exposure category depends on DC site terrain context',
+        standards: [
+          {code:'KBC 2016 강구조', label:'Steel structures', mandatory:true},
+          {code:'KBC 2016 Ch.3', label:'Wind load', mandatory:true},
+          {code:'KBC 2016 Ch.4', label:'Seismic load', mandatory:true},
+          {code:'NFSC', label:'Fire safety', mandatory:true},
+          {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory KBC / NFSC codes · Dashed = AISC / AISI reference'
+      },
+      TH: {
+        name: 'Thailand', flag: '🇹🇭', phase: 'Priority-1',
+        family: 'EIT / AISC-based', familyTag: 'ok',
+        familyNote: 'Direct apply — EIT (AISC 360-16 basis) · φ = 0.90 · CRAH fan-wall active project',
+        windCode: 'EIT 1018-62 / TIS 1311',
+        windZones: ['Zone 1 · Vb=25 m/s — Bangkok ✓','Zone 2 · Vb=27 m/s — central','Zone 3 · Vb=29 m/s — coastal'],
+        windDefault: 0,
+        windHint: '→ EIT 1018-62 wind speed map · Bangkok DC corridor = Zone 1',
+        fireCode: 'NFPA 101 (Life Safety) / TIS 2543',
+        fireRatings: ['None','1-Hour ✓','2-Hour','3-Hour'],
+        fireHint: '→ NFPA 101 Life Safety Code + TIS 2543 · hours notation (AHJ review)',
+        deflOptions: ['L/240 — EIT/AISC default ✓','L/360 — tile / ceiling finish','L/480 — CRAH fan-wall'],
+        deflHint: '→ EIT 1018-62 / AISC 360-16 · L/480 for CRAH fan-wall (KN-CALC-TH-DC-01)',
+        structCode: 'EIT (AISC 360-16 basis)',
+        altCode: 'AISI S100-16',
+        stdHint: '→ φ = 0.90 · γc · fy = 270 MPa; direct AISC methodology applies',
+        cities: ['Bangkok','Chonburi','Rayong','Nonthaburi','Pathum Thani','other…'],
+        cityHint: '→ Bangkok DC corridor (Bangna, Lad Krabang) = Wind Zone 1',
+        standards: [
+          {code:'EIT 1018-62', label:'Steel struct.', mandatory:true},
+          {code:'EIT 1253-62', label:'Load standard', mandatory:true},
+          {code:'TIS 1311', label:'Wind code', mandatory:true},
+          {code:'NFPA 101', label:'Fire / Life Safety', mandatory:true},
+          {code:'TIS 2543', label:'Fire performance', mandatory:true},
+          {code:'AISC 360-16', label:'Steel (ref)', mandatory:false},
+          {code:'AISI S100-16', label:'CFS (ref)', mandatory:false},
+        ],
+        stdNote: 'Solid = mandatory EIT / TIS / NFPA codes · Dashed = AISC reference'
+      }
+    };
+
+    let _selectedCountry = 'VN';
+
+    function buildCountryPills() {
+      const container = document.getElementById('country-pills');
+      if (!container) return;
+      const order = ['TH','MY','IN','ID','AU','KR','SG','VN'];
+      container.innerHTML = order.map(code => {
+        const c = COUNTRY_DB[code];
+        const isVN = code === 'VN';
+        return `<button onclick="selectCountry('${code}')" id="cpill-${code}" style="
+          display:inline-flex;align-items:center;gap:5px;padding:5px 11px;
+          border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
+          border:1.5px solid var(--border);background:transparent;color:var(--fg);
+          font-family:'Space Grotesk',sans-serif;transition:all .15s;
+          ${isVN ? 'opacity:.7;' : ''}"
+          title="${c.name} · ${c.phase}">
+          ${c.flag} ${code}${isVN ? ' <span style="font-size:10px;opacity:.7">(P2)</span>' : ''}
+        </button>`;
+      }).join('');
+    }
+
+    function selectCountry(code) {
+      _selectedCountry = code;
+      const c = COUNTRY_DB[code];
+
+      // Update pill active states
+      document.querySelectorAll('[id^="cpill-"]').forEach(btn => {
+        const isActive = btn.id === 'cpill-' + code;
+        btn.style.background = isActive ? 'var(--rsap)' : 'transparent';
+        btn.style.color = isActive ? '#fff' : 'var(--fg)';
+        btn.style.borderColor = isActive ? 'var(--rsap)' : 'var(--border)';
+      });
+
+      // Update family badge
+      const badge = document.getElementById('family-badge');
+      const tagColors = {
+        ok:    {bg:'#d1fae5', color:'#065f46', border:'#6ee7b7'},
+        adapt: {bg:'#fef3c7', color:'#92400e', border:'#fcd34d'},
+        check: {bg:'#fee2e2', color:'#991b1b', border:'#fca5a5'},
+      };
+      const tc = tagColors[c.familyTag] || tagColors.adapt;
+      badge.style.background = tc.bg;
+      badge.style.color = tc.color;
+      badge.style.border = `1px solid ${tc.border}`;
+      badge.innerHTML = `<strong>${c.family}</strong>&nbsp;&nbsp;${c.familyNote}`;
+
+      // Helper: build opt pills
+      function buildOpts(containerId, options, defaultIdx) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = options.map((o, i) =>
+          `<span class="opt${i === defaultIdx ? ' highlight' : ''}">${o}</span>`
+        ).join('');
+      }
+
+      // City options
+      document.getElementById('city-label').textContent = code === 'SG' ? 'District / Zone' : 'Province / City';
+      buildOpts('city-opts', c.cities, 0);
+      document.getElementById('city-hint').textContent = c.cityHint;
+
+      // Wind zone
+      document.getElementById('wind-label').textContent = `Wind Zone — ${c.windCode}`;
+      buildOpts('wind-opts', c.windZones, c.windDefault);
+      document.getElementById('wind-hint').textContent = c.windHint;
+
+      // Fire rating
+      buildOpts('fire-opts', c.fireRatings, c.fireRatings.findIndex(r => r.includes('✓')));
+      document.getElementById('fire-hint').textContent = `→ ${c.fireCode} · ${c.fireHint.replace(/^→\s*/,'')}`;
+
+      // Deflection limit
+      buildOpts('defl-opts', c.deflOptions, c.deflOptions.findIndex(r => r.includes('✓')));
+      document.getElementById('defl-hint').textContent = c.deflHint;
+
+      // Design standard
+      const stdOpts = [c.structCode, c.altCode, `${c.structCode} + ${c.altCode} (cross-check)`];
+      buildOpts('std-opts', stdOpts, 0);
+      document.getElementById('std-hint').textContent = c.stdHint;
+
+      // Standards database pills
+      const pillContainer = document.getElementById('std-pills');
+      if (pillContainer) {
+        pillContainer.innerHTML = c.standards.map(s =>
+          `<span class="std-sel${s.mandatory ? '' : ' optional'}" title="${s.label}">${s.code}</span>`
+        ).join('');
+      }
+      const stdNote = document.getElementById('std-note');
+      if (stdNote) stdNote.textContent = c.stdNote;
+    }
+
+    // Initialise Step 1 on load
+    document.addEventListener('DOMContentLoaded', () => {
+      buildCountryPills();
+      selectCountry('TH'); // Default: Thailand (active CRAH project)
+    });
+  </script>
+
+  <div class="connector">
+    <svg width="16" height="24" viewBox="0 0 16 24" fill="none"><line x1="8" y1="0" x2="8" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><polyline points="4,16 8,22 12,16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+    <span class="connector-label">model in RSAP 2021 → run FEA</span>
+  </div>
+
+  <!-- ══ STAGE 3: RSAP Outputs ══ -->
+  <div class="stage stage--rsap">
+    <div class="stage-header">
+      <div class="stage-icon">🖥️</div>
+      <div class="stage-meta">
+        <div class="stage-label">Step 3 · RSAP 2021 (FEA Solver)</div>
+        <h2 class="stage-title">Export Format &amp; Import Engine</h2>
+        <p class="stage-desc">Export 4 sheets from RSAP 2021 → run <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--rsap-bg);color:var(--rsap);padding:1px 5px;border-radius:3px;">rsap_import_engine.py</code> to extract the 5 values and run all checks automatically</p>
+      </div>
+    </div>
+
+    <!-- Export spec table -->
+    <div class="sys-section" style="margin-top:4px;">
+      <div class="sys-section-title"><span style="background:var(--rsap)"></span>RSAP Export — 4 Sheets Required (single .xlsx file)</div>
+      <div class="bolt-wrap">
+        <table class="bolt-table">
+          <thead><tr><th>Sheet name</th><th>RSAP path</th><th>Column needed</th><th>Extracts</th></tr></thead>
+          <tbody>
+            <tr><td>Member_Forces</td><td>Results → Members → Forces</td><td>My (N·mm)</td><td><strong>M<sub>max</sub></strong></td></tr>
+            <tr><td>Displacements</td><td>Results → Nodes → Displacements</td><td>Uy or Uz (mm)</td><td><strong>y</strong></td></tr>
+            <tr><td>Plate_Stresses</td><td>Results → Finite Elements → Stresses</td><td>Smax (N/mm²)</td><td><strong>σ<sub>max</sub></strong></td></tr>
+            <tr><td>Reactions</td><td>Results → Supports → Reactions</td><td>Fy/Fz (N) · Fx (N)</td><td><strong>Q<sub>max</sub>, N<sub>max</sub></strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--fg-muted);margin-top:5px;">
+        Export settings: Units = N, mm, N/mm² · Decimal separator = . (dot) · Row 1 = column headers · One load combo per export
+      </div>
+    </div>
+
+    <!-- Engine usage — GUI -->
+    <div class="sys-section">
+      <div class="sys-section-title"><span style="background:var(--rsap)"></span>Import Engine — <code style="font-family:'JetBrains Mono',monospace;font-size:10px;">_ops/tools/rsap_import_engine.py</code></div>
+      <div id="engine-form" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+        <!-- Row 1: System + Height + Deflection -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">System <span style="color:var(--rsap)">*</span></label>
+            <select id="eng-system" style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
+              <option value="C51_305">C51@305mm (default)</option>
+              <option value="C76_305">C76@305mm</option>
+              <option value="C76_406">C76@406mm</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Wall height H (mm) <span style="color:var(--rsap)">*</span></label>
+            <input id="eng-height" type="number" value="3200" min="1000" max="9000" step="100"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Deflection limit L / <span style="color:var(--rsap)">*</span></label>
+            <select id="eng-deflection" style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;cursor:pointer;">
+              <option value="240">240 — standard (IBC / TCVN)</option>
+              <option value="300">300 — Eurocode / AS/NZS</option>
+              <option value="360">360 — tile / brittle finish</option>
+              <option value="480">480 — strict / cleanroom</option>
+            </select>
+          </div>
+        </div>
+        <!-- Import zone -->
+        <div id="eng-dropzone"
+          ondragover="event.preventDefault();this.style.borderColor='var(--rsap)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="handleDrop(event)"
+          style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:12px;"
+          onclick="document.getElementById('eng-file-input').click()">
+          <input id="eng-file-input" type="file" accept=".xlsx,.xls" style="display:none" onchange="handleFileInput(this)">
+          <div id="eng-drop-label">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="margin:0 auto 8px;display:block;color:var(--rsap)"><rect x="4" y="6" width="20" height="17" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M9 6V4.5A1.5 1.5 0 0110.5 3h7A1.5 1.5 0 0119 4.5V6" stroke="currentColor" stroke-width="1.5"/><path d="M14 11v6M11 14l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div style="font-size:13px;font-weight:500;color:var(--fg);margin-bottom:3px;">Drop RSAP export here or click to browse</div>
+            <div style="font-size:11px;color:var(--fg-muted);">Accepts .xlsx exported from RSAP 2021 (4 sheets: Member_Forces · Displacements · Plate_Stresses · Reactions)</div>
+          </div>
+          <div id="eng-file-name" style="display:none;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--rsap);font-weight:600;"></div>
+        </div>
+
+        <!-- Extracted values panel (hidden until file loaded) -->
+        <div id="eng-results" style="display:none;border:1.5px solid var(--rsap);border-radius:8px;overflow:hidden;margin-bottom:12px;">
+          <div style="background:var(--rsap);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:#fff;">Extracted from RSAP file</span>
+            <span id="eng-sheet-info" style="font-size:11px;color:rgba(255,255,255,.75);"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);" id="eng-vals-grid"></div>
+          <div id="eng-warn" style="display:none;padding:8px 14px;background:var(--check-bg);border-top:1px solid var(--check);font-size:11.5px;color:var(--check);"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+          <button onclick="document.getElementById('eng-file-input').click()" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--rsap);color:#fff;border:none;border-radius:7px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3-3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Import RSAP File (.xlsx)
+          </button>
+          <button onclick="copyEngineCmd()" style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:transparent;color:var(--rsap);border:1.5px solid var(--rsap);border-radius:7px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h6M9 6l2 2-2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Copy CLI Command
+          </button>
+        </div>
+        <div id="eng-status" style="display:none;font-size:12px;padding:8px 12px;border-radius:6px;"></div>
+      </div>
+    </div>
+
+    <!-- 5 output values -->
+    <div class="sys-section">
+      <div class="sys-section-title"><span style="background:var(--rsap)"></span>5 Values Extracted</div>
+      <div class="item-grid">
+        <div class="item"><span class="item-dot" style="background:var(--rsap)"></span><div class="item-body"><span class="item-name">M<sub>max</sub></span><span class="item-val">Member_Forces · My column · N·mm</span></div></div>
+        <div class="item"><span class="item-dot" style="background:var(--rsap)"></span><div class="item-body"><span class="item-name">y deflection</span><span class="item-val">Displacements · Uy/Uz · mm</span></div></div>
+        <div class="item"><span class="item-dot" style="background:var(--rsap)"></span><div class="item-body"><span class="item-name">σ<sub>max</sub> board</span><span class="item-val">Plate_Stresses · Smax · N/mm²</span></div></div>
+        <div class="item"><span class="item-dot" style="background:var(--rsap)"></span><div class="item-body"><span class="item-name">Q<sub>max</sub> bolt shear</span><span class="item-val">Reactions · Fy or Fz · N</span></div></div>
+        <div class="item"><span class="item-dot" style="background:var(--rsap)"></span><div class="item-body"><span class="item-name">N<sub>max</sub> bolt axial</span><span class="item-val">Reactions · Fx · N</span></div></div>
+      </div>
+    </div>
+
+    <!-- Column name aliases note -->
+    <div style="padding:9px 12px;background:var(--rsap-bg);border:1px solid var(--rsap);border-radius:7px;font-size:11.5px;color:var(--rsap);display:flex;gap:8px;align-items:flex-start;">
+      <span style="flex-shrink:0;">ℹ</span>
+      <span>The engine auto-resolves Vietnamese/English column name variants (e.g. "My" / "Moment My" / "Momen My"). If a column is not found, the error message prints the actual headers so you can add the alias.</span>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg width="16" height="24" viewBox="0 0 16 24" fill="none"><line x1="8" y1="0" x2="8" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><polyline points="4,16 8,22 12,16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+    <span class="connector-label">engine runs checks automatically → no manual paste</span>
+  </div>
+
+  <!-- ══ STAGE 4: Excel Checks ══ -->
+  <div class="stage stage--excel">
+    <div class="stage-header">
+      <div class="stage-icon">🔢</div>
+      <div class="stage-meta">
+        <div class="stage-label">Step 4 · Excel Pass/Fail Checks</div>
+        <h2 class="stage-title">5 Structural Verifications</h2>
+        <p class="stage-desc">Excel calculates allowable limits and compares against RSAP outputs</p>
+      </div>
+    </div>
+    <div class="check-list">
+      <div class="check-row" id="chk-a">
+        <span class="check-badge ok" id="chk-a-badge">—</span>
+        <span class="check-name">a. Ultimate Limit State — Bending Stress</span>
+        <span class="check-formula" id="chk-a-formula">σ = M<sub>max</sub>/Wx ≤ γc·fy = 270 MPa</span>
+      </div>
+      <div class="check-row" id="chk-b">
+        <span class="check-badge ok" id="chk-b-badge">—</span>
+        <span class="check-name">b. Serviceability — Frame Deflection</span>
+        <span class="check-formula" id="chk-b-formula">y ≤ L/240 = H/240 mm</span>
+      </div>
+      <div class="check-row" id="chk-c">
+        <span class="check-badge ok" id="chk-c-badge">—</span>
+        <span class="check-name">c. Gypsum Board Stress</span>
+        <span class="check-formula" id="chk-c-formula">σ<sub>max</sub> ≤ [σ] = 2.2 MPa</span>
+      </div>
+      <div class="check-row" id="chk-d1">
+        <span class="check-badge ok" id="chk-d1-badge">—</span>
+        <span class="check-name">d-1. Anchor Bolt — Shear</span>
+        <span class="check-formula" id="chk-d1-formula">Q<sub>max</sub> ≤ [Q] = 3,700 N (M6, d=30mm)</span>
+      </div>
+      <div class="check-row" id="chk-d2">
+        <span class="check-badge ok" id="chk-d2-badge">—</span>
+        <span class="check-name">d-2. Anchor Bolt — Axial / Pullout</span>
+        <span class="check-formula" id="chk-d2-formula">N<sub>max</sub> ≤ [N]=2,850N &amp; [S]=1,200N</span>
+      </div>
+    </div>
+    <div id="chk-overall" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-align:center;"></div>
+
+    <div class="standards" style="margin-top:14px; padding-top:14px;">
+      <span class="std-pill">TCVN 5575-2024 §7.2</span>
+      <span class="std-pill">AISC 360-16</span>
+      <span class="std-pill">Gypsum Construction Handbook Ch.2</span>
+      <span class="std-pill">HAS Expansion Anchor data</span>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg width="16" height="24" viewBox="0 0 16 24" fill="none"><line x1="8" y1="0" x2="8" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><polyline points="4,16 8,22 12,16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+    <span class="connector-label">all checks passed → conclusion</span>
+  </div>
+
+  <!-- ══ STAGE 5: Conclusion ══ -->
+  <div class="stage stage--output">
+    <div class="stage-header">
+      <div class="stage-icon">✅</div>
+      <div class="stage-meta">
+        <div class="stage-label">Step 5 · Conclusion</div>
+        <h2 class="stage-title">System Structurally Adequate</h2>
+        <p class="stage-desc">Wall system confirmed under combined DL + LL loading at specified height and stud configuration</p>
+      </div>
+    </div>
+    <div class="conclusion">
+      <div class="concl-item">
+        <div class="concl-check">✓</div>
+        <div class="concl-label">Frame Strength</div>
+        <div class="concl-sub">ULS bending OK</div>
+      </div>
+      <div class="concl-item">
+        <div class="concl-check">✓</div>
+        <div class="concl-label">Frame Stiffness</div>
+        <div class="concl-sub">SLS deflection OK</div>
+      </div>
+      <div class="concl-item">
+        <div class="concl-check">✓</div>
+        <div class="concl-label">Board Integrity</div>
+        <div class="concl-sub">Gypsum stress OK</div>
+      </div>
+      <div class="concl-item">
+        <div class="concl-check">✓</div>
+        <div class="concl-label">Joint Capacity</div>
+        <div class="concl-sub">Shear + axial OK</div>
+      </div>
+    </div>
+
+    <!-- Export Report section -->
+    <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:20px;">
+      <div class="sys-section-title" style="margin-bottom:12px;">
+        <span style="background:var(--ok)"></span>Export Calculation Report / Xuất báo cáo tính toán
+      </div>
+
+      <!-- GUI Export Form -->
+      <div id="export-form" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Project / Dự án <span style="color:var(--accent)">*</span></label>
+            <input id="rpt-project" type="text" placeholder="Vinhomes Smart City DC"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Customer / Khách hàng <span style="color:var(--accent)">*</span></label>
+            <input id="rpt-customer" type="text" placeholder="Vinhomes Corp"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">City / Tỉnh thành <span style="color:var(--accent)">*</span></label>
+            <input id="rpt-city" type="text" placeholder="Hanoi"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:4px;">Engineer / Kỹ sư tính toán</label>
+            <input id="rpt-engineer" type="text" placeholder="Nguyen Van A"
+              style="width:100%;padding:7px 10px;font-size:12.5px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--fg);outline:none;" />
+          </div>
+        </div>
+        <button onclick="exportReport()" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--ok);color:#fff;border:none;border-radius:7px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 1v8M5 6l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Export Calculation Report
+        </button>
+        <div id="rpt-status" style="display:none;margin-top:10px;font-size:12px;padding:8px 12px;border-radius:6px;"></div>
+      </div>
+
+      <!-- Report sections preview -->
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--fg-muted);margin-bottom:8px;">Report Sections / Các mục báo cáo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;">I. Applied Standards</div>
+          <div style="font-size:11px;color:var(--fg-muted);line-height:1.5;">TCVN 5575-2024, AISC 360-16, TCVN 10701-2015, ASTM C635, IBC 2021, TCVN 2737-2023, QCVN 02:2021/BXD</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;">II. System Proposal</div>
+          <div style="font-size:11px;color:var(--fg-muted);line-height:1.5;">Stud + Track + Nogging + Bolt specs · Cladding layer stack (Side 1 / Middle / Side 2)</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--check);margin-bottom:4px;">III. Calculations</div>
+          <div style="font-size:11px;color:var(--fg-muted);line-height:1.5;">Input data · Loads &amp; combos · 5 RSAP extracted values · Checks a–d with actual vs limit table</div>
+        </div>
+        <div style="background:var(--ok-bg);border:1px solid var(--ok);border-radius:7px;padding:10px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:4px;">IV. Conclusion</div>
+          <div style="font-size:11px;color:var(--fg-muted);line-height:1.5;">PASS / FAIL verdict · Summary tile · Disclaimer (EN + VN) · Print-to-PDF ready</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <span class="note-icon">⚠️</span>
+  <span>This calculation is provided by Knauf Vietnam as an advisory document. It must be reviewed and approved by the Developer, Project Management, or a licensed Structural Engineer before application to any project.</span>
+</div>
