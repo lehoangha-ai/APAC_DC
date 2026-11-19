@@ -710,6 +710,7 @@
   }
 </style>
 
+<div id="main-content" style="display:none">
 <div class="page-header">
   <div class="eyebrow">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6h4M6 4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -2509,6 +2510,8 @@ tr:nth-child(even) td{background:#fafbfc}
   <span>This calculation is provided by Knauf Vietnam as an advisory document. It must be reviewed and approved by the Developer, Project Management, or a licensed Structural Engineer before application to any project.</span>
 </div>
 
+</div><!-- /#main-content -->
+
 <!-- ══ SUPABASE CLIENT ══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 
@@ -2734,6 +2737,7 @@ tr:nth-child(even) td{background:#fafbfc}
 
   async function authSignOut() {
     await _sb.auth.signOut();
+    document.getElementById('main-content').style.display = 'none';
     document.getElementById('auth-bar').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
     authShowTab('signin');
@@ -2743,6 +2747,7 @@ tr:nth-child(even) td{background:#fafbfc}
 
   function authEnterApp(email) {
     document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
     const bar = document.getElementById('auth-bar');
     bar.style.display = 'flex';
     document.getElementById('auth-bar-email').textContent = email;
@@ -2757,7 +2762,8 @@ tr:nth-child(even) td{background:#fafbfc}
     _sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         authEnterApp(session.user.email);
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+        document.getElementById('main-content').style.display = 'none';
         document.getElementById('auth-bar').style.display = 'none';
         document.getElementById('auth-overlay').style.display = 'flex';
       }
