@@ -2612,6 +2612,13 @@ tr:nth-child(even) td{background:#fafbfc}
     transition: all .15s;
   }
   #auth-signout-btn:hover { border-color: #c46b00; color: #c46b00; }
+  #auth-admin-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1.5px solid #dde1ea;
+    background: transparent; font-family: 'Space Grotesk',sans-serif;
+    font-size: 11.5px; font-weight: 600; color: #1b55e2;
+    text-decoration: none; transition: all .15s;
+  }
+  #auth-admin-btn:hover { background: #eef2fd; border-color: #1b55e2; }
 </style>
 
 <!-- Auth bar (sticky top, visible when signed in) -->
@@ -2622,6 +2629,7 @@ tr:nth-child(even) td{background:#fafbfc}
   </div>
   <div id="auth-bar-right">
     <span id="auth-bar-email"></span>
+    <a id="auth-admin-btn" href="admin.html" target="_blank" rel="noopener">Admin ↗</a>
     <button id="auth-signout-btn" onclick="authSignOut()">Sign out</button>
   </div>
 </div>
