@@ -1,24 +1,18 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
-<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Knauf Suprawall Calc Workflow</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<script>
-  /* Force light mode regardless of viewer system theme or app dark toggle */
-  document.documentElement.setAttribute('data-theme','light');
-  document.documentElement.style.colorScheme = 'light';
-  /* Re-apply on any mutation the host may make */
-  new MutationObserver(function(){
-    if(document.documentElement.getAttribute('data-theme') !== 'light'){
-      document.documentElement.setAttribute('data-theme','light');
-    }
-  }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Knauf Suprawall Calc Workflow</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+  <style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 
-<style>
   /* Layout: vertical flow with 5 swim-lane stages */
   :root {
     color-scheme: light;
@@ -712,9 +706,188 @@
     .check-formula { display: none; }
     .tab-row { flex-direction: column; }
   }
-</style>
+
+
+  #auth-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #f0f2f7;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  #auth-card {
+    background: #fff;
+    border: 1px solid #dde1ea;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0,0,0,.12);
+    width: 100%; max-width: 400px;
+    padding: 36px 32px 28px;
+  }
+  #auth-logo {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  #auth-logo-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #1b55e2;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px; font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif; flex-shrink: 0;
+  }
+  #auth-logo-text { line-height: 1.25; }
+  #auth-logo-text strong { font-family: 'Space Grotesk',sans-serif; font-size: 15px; color: #1a1e27; display: block; }
+  #auth-logo-text span   { font-size: 11px; color: #5a6070; }
+  .auth-tabs {
+    display: flex; gap: 2px; background: #f0f2f7;
+    border-radius: 8px; padding: 3px; margin-bottom: 24px;
+  }
+  .auth-tab {
+    flex: 1; padding: 7px; border: none; border-radius: 6px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s; background: transparent; color: #5a6070;
+  }
+  .auth-tab.active { background: #fff; color: #1a1e27; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: #5a6070; margin-bottom: 5px;
+  }
+  .auth-field input {
+    width: 100%; padding: 9px 12px; font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+    border: 1.5px solid #dde1ea; border-radius: 8px;
+    background: #fff; color: #1a1e27; outline: none;
+    transition: border-color .15s; color-scheme: light;
+    box-sizing: border-box;
+  }
+  .auth-field input:focus { border-color: #1b55e2; }
+  #auth-signin-btn, #auth-signup-btn {
+    width: 100%; padding: 10px; margin-top: 6px;
+    background: #1b55e2; color: #fff; border: none; border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s;
+  }
+  #auth-signin-btn:hover, #auth-signup-btn:hover { opacity: .88; }
+  #auth-error {
+    display: none; margin-top: 12px; padding: 9px 12px;
+    background: #fff3e0; border: 1px solid #c46b00; border-radius: 7px;
+    font-size: 12px; color: #c46b00; font-weight: 500;
+  }
+  #auth-success {
+    display: none; margin-top: 12px; padding: 9px 12px;
+    background: #e6f4ec; border: 1px solid #1a7a3c; border-radius: 7px;
+    font-size: 12px; color: #1a7a3c; font-weight: 500;
+  }
+  /* Auth bar (shown when signed in) */
+  #auth-bar {
+    display: none;
+    position: sticky; top: 0; z-index: 100;
+    background: #fff; border-bottom: 1px solid #dde1ea;
+    padding: 8px max(16px, env(safe-area-inset-left,0px));
+    padding-right: max(16px, env(safe-area-inset-right,0px));
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Space Grotesk', sans-serif;
+    color-scheme: light;
+  }
+  #auth-bar-left { display: flex; align-items: center; gap: 8px; }
+  #auth-bar-logo {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: #1b55e2; color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  #auth-bar-title { font-size: 12px; font-weight: 600; color: #1a1e27; }
+  #auth-bar-right { display: flex; align-items: center; gap: 10px; }
+  #auth-bar-email { font-size: 11.5px; color: #5a6070; }
+  #auth-signout-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1.5px solid #dde1ea;
+    background: transparent; font-family: 'Space Grotesk',sans-serif;
+    font-size: 11.5px; font-weight: 600; color: #5a6070; cursor: pointer;
+    transition: all .15s;
+  }
+  #auth-signout-btn:hover { border-color: #c46b00; color: #c46b00; }
+  #auth-admin-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1.5px solid #dde1ea;
+    background: transparent; font-family: 'Space Grotesk',sans-serif;
+    font-size: 11.5px; font-weight: 600; color: #1b55e2;
+    text-decoration: none; transition: all .15s;
+  }
+  #auth-admin-btn:hover { background: #eef2fd; border-color: #1b55e2; }
+
+  </style>
+  <script>
+
+  /* Force light mode regardless of viewer system theme or app dark toggle */
+  document.documentElement.setAttribute('data-theme','light');
+  document.documentElement.style.colorScheme = 'light';
+  /* Re-apply on any mutation the host may make */
+  new MutationObserver(function(){
+    if(document.documentElement.getAttribute('data-theme') !== 'light'){
+      document.documentElement.setAttribute('data-theme','light');
+    }
+  }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  </script>
+</head>
+<body>
+
+<!-- Auth bar (sticky top, visible when signed in) -->
+<div id="auth-bar">
+  <div id="auth-bar-left">
+    <div id="auth-bar-logo">K</div>
+    <span id="auth-bar-title">Knauf Suprawall Calc</span>
+  </div>
+  <div id="auth-bar-right">
+    <span id="auth-bar-email"></span>
+    <a id="auth-admin-btn" href="admin.html" target="_blank" rel="noopener">Admin ↗</a>
+    <button id="auth-signout-btn" onclick="authSignOut()">Sign out</button>
+  </div>
+</div>
+
+<!-- Auth overlay (shown when not signed in) -->
+<div id="auth-overlay">
+  <div id="auth-card">
+    <div id="auth-logo">
+      <div id="auth-logo-icon">K</div>
+      <div id="auth-logo-text">
+        <strong>Knauf Suprawall Calc</strong>
+        <span>APAC Data Centers · Structural Workflow</span>
+      </div>
+    </div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700;color:#1a1e27;margin-bottom:18px;display:flex;align-items:center;gap:7px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#1b55e2;display:inline-block;"></span>
+      Authorized Sign In
+    </div>
+    <div id="auth-signin-form">
+      <div class="auth-field">
+        <label>Email</label>
+        <input id="si-email" type="email" placeholder="you@company.com" autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')authSignIn()" />
+      </div>
+      <button id="auth-signin-btn" onclick="authSignIn()">Sign in</button>
+    </div>
+    <div id="auth-error"></div>
+    <div id="auth-success"></div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #edf0f5;text-align:center;">
+      <a href="admin.html" target="_blank" rel="noopener"
+        style="font-size:11.5px;font-weight:600;color:#1b55e2;text-decoration:none;
+               font-family:'Space Grotesk',sans-serif;letter-spacing:.03em;
+               display:inline-flex;align-items:center;gap:4px;opacity:.8;transition:opacity .15s;"
+        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.8'">
+        ⚙ Admin Console
+      </a>
+    </div>
+  </div>
+</div>
+
+
 
 <div id="main-content" style="display:none">
+
 <div class="page-header">
   <div class="eyebrow">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 6h4M6 4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -2514,178 +2687,21 @@ tr:nth-child(even) td{background:#fafbfc}
   <span>This calculation is provided by Knauf Vietnam as an advisory document. It must be reviewed and approved by the Developer, Project Management, or a licensed Structural Engineer before application to any project.</span>
 </div>
 
+
 </div><!-- /#main-content -->
-
-<!-- ══ SUPABASE CLIENT ══ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
-
-<!-- ══ AUTH OVERLAY ══ -->
-<style>
-  #auth-overlay {
-    position: fixed; inset: 0; z-index: 9999;
-    background: #f0f2f7;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Inter', system-ui, sans-serif;
-    color-scheme: light;
-  }
-  #auth-card {
-    background: #fff;
-    border: 1px solid #dde1ea;
-    border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(0,0,0,.12);
-    width: 100%; max-width: 400px;
-    padding: 36px 32px 28px;
-  }
-  #auth-logo {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 24px;
-  }
-  #auth-logo-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    background: #1b55e2;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 18px; font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif; flex-shrink: 0;
-  }
-  #auth-logo-text { line-height: 1.25; }
-  #auth-logo-text strong { font-family: 'Space Grotesk',sans-serif; font-size: 15px; color: #1a1e27; display: block; }
-  #auth-logo-text span   { font-size: 11px; color: #5a6070; }
-  .auth-tabs {
-    display: flex; gap: 2px; background: #f0f2f7;
-    border-radius: 8px; padding: 3px; margin-bottom: 24px;
-  }
-  .auth-tab {
-    flex: 1; padding: 7px; border: none; border-radius: 6px;
-    font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all .15s; background: transparent; color: #5a6070;
-  }
-  .auth-tab.active { background: #fff; color: #1a1e27; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-  .auth-field { margin-bottom: 14px; }
-  .auth-field label {
-    display: block; font-size: 11px; font-weight: 600;
-    letter-spacing: .06em; text-transform: uppercase;
-    color: #5a6070; margin-bottom: 5px;
-  }
-  .auth-field input {
-    width: 100%; padding: 9px 12px; font-size: 13.5px;
-    font-family: 'Inter', sans-serif;
-    border: 1.5px solid #dde1ea; border-radius: 8px;
-    background: #fff; color: #1a1e27; outline: none;
-    transition: border-color .15s; color-scheme: light;
-    box-sizing: border-box;
-  }
-  .auth-field input:focus { border-color: #1b55e2; }
-  #auth-signin-btn, #auth-signup-btn {
-    width: 100%; padding: 10px; margin-top: 6px;
-    background: #1b55e2; color: #fff; border: none; border-radius: 8px;
-    font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: opacity .15s;
-  }
-  #auth-signin-btn:hover, #auth-signup-btn:hover { opacity: .88; }
-  #auth-error {
-    display: none; margin-top: 12px; padding: 9px 12px;
-    background: #fff3e0; border: 1px solid #c46b00; border-radius: 7px;
-    font-size: 12px; color: #c46b00; font-weight: 500;
-  }
-  #auth-success {
-    display: none; margin-top: 12px; padding: 9px 12px;
-    background: #e6f4ec; border: 1px solid #1a7a3c; border-radius: 7px;
-    font-size: 12px; color: #1a7a3c; font-weight: 500;
-  }
-  /* Auth bar (shown when signed in) */
-  #auth-bar {
-    display: none;
-    position: sticky; top: 0; z-index: 100;
-    background: #fff; border-bottom: 1px solid #dde1ea;
-    padding: 8px max(16px, env(safe-area-inset-left,0px));
-    padding-right: max(16px, env(safe-area-inset-right,0px));
-    display: flex; align-items: center; justify-content: space-between;
-    font-family: 'Space Grotesk', sans-serif;
-    color-scheme: light;
-  }
-  #auth-bar-left { display: flex; align-items: center; gap: 8px; }
-  #auth-bar-logo {
-    width: 26px; height: 26px; border-radius: 6px;
-    background: #1b55e2; color: #fff; font-size: 12px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  #auth-bar-title { font-size: 12px; font-weight: 600; color: #1a1e27; }
-  #auth-bar-right { display: flex; align-items: center; gap: 10px; }
-  #auth-bar-email { font-size: 11.5px; color: #5a6070; }
-  #auth-signout-btn {
-    padding: 5px 12px; border-radius: 6px; border: 1.5px solid #dde1ea;
-    background: transparent; font-family: 'Space Grotesk',sans-serif;
-    font-size: 11.5px; font-weight: 600; color: #5a6070; cursor: pointer;
-    transition: all .15s;
-  }
-  #auth-signout-btn:hover { border-color: #c46b00; color: #c46b00; }
-  #auth-admin-btn {
-    padding: 5px 12px; border-radius: 6px; border: 1.5px solid #dde1ea;
-    background: transparent; font-family: 'Space Grotesk',sans-serif;
-    font-size: 11.5px; font-weight: 600; color: #1b55e2;
-    text-decoration: none; transition: all .15s;
-  }
-  #auth-admin-btn:hover { background: #eef2fd; border-color: #1b55e2; }
-</style>
-
-<!-- Auth bar (sticky top, visible when signed in) -->
-<div id="auth-bar">
-  <div id="auth-bar-left">
-    <div id="auth-bar-logo">K</div>
-    <span id="auth-bar-title">Knauf Suprawall Calc</span>
-  </div>
-  <div id="auth-bar-right">
-    <span id="auth-bar-email"></span>
-    <a id="auth-admin-btn" href="admin.html" target="_blank" rel="noopener">Admin ↗</a>
-    <button id="auth-signout-btn" onclick="authSignOut()">Sign out</button>
-  </div>
-</div>
-
-<!-- Auth overlay (shown when not signed in) -->
-<div id="auth-overlay">
-  <div id="auth-card">
-    <div id="auth-logo">
-      <div id="auth-logo-icon">K</div>
-      <div id="auth-logo-text">
-        <strong>Knauf Suprawall Calc</strong>
-        <span>APAC Data Centers · Structural Workflow</span>
-      </div>
-    </div>
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700;color:#1a1e27;margin-bottom:18px;display:flex;align-items:center;gap:7px;">
-      <span style="width:7px;height:7px;border-radius:50%;background:#1b55e2;display:inline-block;"></span>
-      Authorized Sign In
-    </div>
-    <div id="auth-signin-form">
-      <div class="auth-field">
-        <label>Email</label>
-        <input id="si-email" type="email" placeholder="you@company.com" autocomplete="email" />
-      </div>
-      <div class="auth-field">
-        <label>Password</label>
-        <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password"
-          onkeydown="if(event.key==='Enter')authSignIn()" />
-      </div>
-      <button id="auth-signin-btn" onclick="authSignIn()">Sign in</button>
-    </div>
-    <div id="auth-error"></div>
-    <div id="auth-success"></div>
-    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #edf0f5;text-align:center;">
-      <a href="admin.html" target="_blank" rel="noopener"
-        style="font-size:11.5px;font-weight:600;color:#1b55e2;text-decoration:none;
-               font-family:'Space Grotesk',sans-serif;letter-spacing:.03em;
-               display:inline-flex;align-items:center;gap:4px;opacity:.8;transition:opacity .15s;"
-        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.8'">
-        ⚙ Admin Console
-      </a>
-    </div>
-  </div>
-</div>
 
 <script>
   /* ══ KNAUF AUTH — Supabase email + password ══ */
   const _SBURL = 'https://bkvnfrnqseqquewbcpqo.supabase.co';
   const _SBKEY = 'sb_publishable__8xL8-Hn6UVlWYtzBunzdA_yY8bt16A';
-  const _sb = supabase.createClient(_SBURL, _SBKEY);
+  let _sb = null;
+  try {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+      _sb = supabase.createClient(_SBURL, _SBKEY);
+    }
+  } catch(e) {
+    console.warn('Supabase initialization error:', e);
+  }
 
   function authShowError(msg)   { const e=document.getElementById('auth-error');   e.textContent=msg; e.style.display='block'; document.getElementById('auth-success').style.display='none'; }
   function authShowSuccess(msg) { const e=document.getElementById('auth-success'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-error').style.display='none'; }
@@ -2697,6 +2713,7 @@ tr:nth-child(even) td{background:#fafbfc}
     const pw    = document.getElementById('si-password')?.value || '';
     if (!email) return authShowError('Enter your email.');
     if (!pw)    return authShowError('Enter your password.');
+    if (!_sb)   return authShowError('Supabase client failed to load. Please check connection and refresh.');
     const btn = document.getElementById('auth-signin-btn');
     if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
     const { data, error } = await _sb.auth.signInWithPassword({ email, password: pw });
@@ -2706,7 +2723,7 @@ tr:nth-child(even) td{background:#fafbfc}
   }
 
   async function authSignOut() {
-    await _sb.auth.signOut();
+    if (_sb) await _sb.auth.signOut();
     document.getElementById('main-content').style.display = 'none';
     document.getElementById('auth-bar').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
@@ -2725,6 +2742,7 @@ tr:nth-child(even) td{background:#fafbfc}
 
   /* ── Boot: restore existing Supabase session ── */
   (async function authBoot() {
+    if (!_sb) return;
     try {
       const { data: { session } } = await _sb.auth.getSession();
       if (session) authEnterApp(session.user.email);
@@ -2732,7 +2750,7 @@ tr:nth-child(even) td{background:#fafbfc}
     _sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         authEnterApp(session.user.email);
-      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+      } else if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         document.getElementById('main-content').style.display = 'none';
         document.getElementById('auth-bar').style.display = 'none';
         document.getElementById('auth-overlay').style.display = 'flex';
