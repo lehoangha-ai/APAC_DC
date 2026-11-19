@@ -887,6 +887,22 @@
           </div>
         </div>
       </div>
+
+      <!-- Standards Atlas library panel (DC_TECH_StandardsAtlas v3.1 — dynamic per country) -->
+      <div id="std-atlas-panel" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted);display:flex;align-items:center;gap:5px;">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M3 4h5M3 6h5M3 8h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            DC Standards Atlas
+          </div>
+          <span id="atlas-count" style="font-size:10px;font-weight:600;color:var(--accent);font-family:'Space Grotesk',sans-serif;"></span>
+        </div>
+        <div style="font-size:10px;color:var(--fg-muted);margin-bottom:8px;">
+          Source: <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;">DC_TECH_StandardsAtlas_v3.1</span> · ★ = Priority-1 · ✅ = on file · ⚠ = confirm status
+        </div>
+        <div id="atlas-structural" style="margin-bottom:8px;"></div>
+        <div id="atlas-fire"></div>
+      </div>
     </div>
 
   </div>
@@ -1812,6 +1828,74 @@ tr:nth-child(even) td{background:#fafbfc}
       }
     };
 
+    /* ══════════════════════════════════════════════════════════
+       STANDARDS ATLAS — extracted from DC_TECH_StandardsAtlas_v3.1
+       71 standards: Structural(26) + Fire(45)
+       Fields: code, ttl, grp, dom, ctry[], pri, vf, use
+    ══════════════════════════════════════════════════════════ */
+    const STANDARDS_ATLAS = [{"code":"NFPA 75 (2024)","ttl":"Standard for the fire protection of information technology equipment","grp":"Fire","dom":"ess","ctry":[],"pri":1,"vf":"flag","use":"White space fire separation, immersion cooling off-gas safety, duct smoke dampers."},{"code":"NFPA 855 (2026)","ttl":"Standard for the installation of stationary energy storage systems","grp":"Fire","dom":"ess","ctry":[],"pri":1,"vf":"flag","use":"Lithium-ion UPS room separation, explosion relief, UL 9540A large-scale fire test validation."},{"code":"AISI S100-16 / S100-24","ttl":"North American specification for the design of cold-formed steel structural members","grp":"Structural","dom":"struct","ctry":[],"pri":1,"vf":"id","use":"Core governing structural standard for DataShieldDC; native module in Bentley STAAD.Pro."},{"code":"AISI S240-20","ttl":"North American standard for cold-formed steel structural framing","grp":"Structural","dom":"struct","ctry":[],"pri":1,"vf":"flag","use":"Governs DataShieldDC as a complete structural load-bearing wall system (100% non-composite design)."},{"code":"ASTM C955","ttl":"Cold-formed steel structural framing members — specification","grp":"Structural","dom":"product","ctry":[],"pri":1,"vf":"id","use":"Structural load-bearing studs and tracks (min 1.15mm BMT, Fy ≥ 350 MPa) — DataShieldDC framing product standard."},{"code":"ASTM C645","ttl":"Nonstructural steel framing members — specification","grp":"Structural","dom":"product","ctry":[],"pri":0,"vf":"flag","use":"Limited to ≤0.48 kPa (10 psf) transverse load. Strictly prohibited for DataShieldDC data halls."},{"code":"AS/NZS 4600:2018","ttl":"Cold-formed steel structures","grp":"Structural","dom":"struct","ctry":["AU"],"pri":0,"vf":"id","use":"Governing Australian / New Zealand cold-formed steel code; native module in Bentley STAAD.Pro."},{"code":"EN 1993-1-3 (Eurocode 3)","ttl":"Design of steel structures — Cold-formed members and sheeting","grp":"Structural","dom":"struct","ctry":[],"pri":0,"vf":"id","use":"European standard for CFS framing; verified via Autodesk Robot Structural Analysis (RSAP)."},{"code":"ASCE/SEI 7-22 Ch. 13","ttl":"Minimum design loads — Seismic design of nonstructural components","grp":"Structural","dom":"seismic","ctry":[],"pri":1,"vf":"id","use":"Component seismic coefficient (Ip=1.5) for critical data center walls and suspended ceilings."},{"code":"ASTM E580 / E580M","ttl":"Installation of ceiling systems in areas subject to earthquake ground motions","grp":"Structural","dom":"seismic","ctry":[],"pri":1,"vf":"id","use":"Seismic Design Categories D–F; required in Indonesia, Philippines, and Korea >250m²."},{"code":"UL 2079 / EN 1366-4","ttl":"Tests for fire resistance of building joint systems (Head-of-Wall)","grp":"Fire","dom":"joints","ctry":[],"pri":1,"vf":"id","use":"Fire-rated slotted head deflection track accommodating 15–25mm live slab movement (Evidence E4)."},{"code":"ASTM E814 / UL 1479 / EN 1366-3","ttl":"Fire tests of through-penetration firestops","grp":"Fire","dom":"joints","ctry":[],"pri":1,"vf":"id","use":"Co-certified Hilti speed sleeve and block firestops through DataShieldDC walls (Evidence E5)."},{"code":"EN 1364-1 / ASTM E119","ttl":"Fire resistance tests for non-loadbearing elements — Walls","grp":"Fire","dom":"fireres","ctry":[],"pri":1,"vf":"flag","use":"DataShieldDC compartment separating walls — EI 60 to EI 240 classification (Evidence E1)."},{"code":"EN 1365-1 / ASTM E119 (Loaded)","ttl":"Fire resistance tests for loadbearing elements — Walls","grp":"Fire","dom":"fireres","ctry":[],"pri":1,"vf":"flag","use":"DataShieldDC load-bearing walls under axial load — REI 60 to REI 120 classification (Evidence E2)."},{"code":"EN 13501-1","ttl":"Fire classification of construction products — Reaction to fire (Euroclass)","grp":"Fire","dom":"firereact","ctry":[],"pri":1,"vf":"id","use":"Euroclass A1 and A2-s1,d0 non-combustible ratings for ceiling tiles, boards, and insulation (Evidence E8)."},{"code":"ASTM E84 / UL 723","ttl":"Surface burning characteristics of building materials (Steiner Tunnel)","grp":"Fire","dom":"firereact","ctry":[],"pri":1,"vf":"id","use":"Flame Spread Index (FSI ≤ 25) and Smoke Developed Index (SDI ≤ 50) for plenum surfaces (Evidence E9)."},{"code":"UBBL 1984 (2021)","ttl":"Uniform Building By-Laws — Fire Requirements (Malaysia)","grp":"Fire","dom":"country","ctry":["MY"],"pri":1,"vf":"id","use":"Part VII & VIII fire compartmentation and 2h/4h wall ratings for data center developments in Malaysia."},{"code":"MS EN 1998-1:2015","ttl":"Eurocode 8: Design of structures for earthquake resistance (Malaysia NA)","grp":"Structural","dom":"seismic","ctry":["MY"],"pri":0,"vf":"id","use":"Seismic design requirements for Peninsular Malaysia and Sabah mission-critical facilities."},{"code":"MS 1553:2002","ttl":"Code of practice on wind loading for building structure (Malaysia)","grp":"Structural","dom":"country","ctry":["MY"],"pri":0,"vf":"id","use":"Transverse wind load calculation for exterior facades and tall internal boundary walls."},{"code":"NBCS 2026 (SP 7:2026)","ttl":"National Building Code of India (2026 revision)","grp":"Structural","dom":"country","ctry":["IN"],"pri":1,"vf":"flag","use":"Comprehensive unified building, structural CFS, and fire safety code for hyperscale DC parks across India."},{"code":"IS 1893:2016 (BIS Rollback)","ttl":"Criteria for earthquake resistant design of structures (India)","grp":"Structural","dom":"country","ctry":["IN"],"pri":1,"vf":"flag","use":"BIS rolled back extreme acceleration amendments, restoring rational non-structural seismic coefficients."},{"code":"IS 12777","ttl":"Methods of test for fire resistance of building elements (India)","grp":"Fire","dom":"fireres","ctry":["IN"],"pri":0,"vf":"id","use":"Indian fire resistance test commonly cited alongside BS 476 for state fire NoC approvals."},{"code":"SNI 1726:2019","ttl":"Tata cara perencanaan ketahanan gempa untuk struktur bangunan gedung (Indonesia)","grp":"Structural","dom":"seismic","ctry":["ID"],"pri":1,"vf":"flag","use":"Indonesian national seismic code based on ASCE 7-16; mandates SDC D–F bracing for ceilings and partitions."},{"code":"SNI 03-1735 / 1746","ttl":"Tata cara perencanaan akses dan pencegahan bahaya kebakaran (Indonesia)","grp":"Fire","dom":"firereact","ctry":["ID"],"pri":0,"vf":"id","use":"National fire safety standards governing Jakarta and Batam hyperscale data center facilities."},{"code":"DPT 1301/1302-61","ttl":"Standard for earthquake-resistant design of buildings (Thailand)","grp":"Structural","dom":"seismic","ctry":["TH"],"pri":1,"vf":"id","use":"Dept of Public Works seismic guidelines governing Bangkok and Chonburi EEC data hall structural design."},{"code":"Building Control Act B.E. 2522","ttl":"Thailand Building Control Act & Ministerial Fire Regulations","grp":"Fire","dom":"country","ctry":["TH"],"pri":0,"vf":"id","use":"Governs fire resistance, compartmentation, and allowable wall heights for commercial and industrial buildings."},{"code":"KDS 41 17 00","ttl":"Korean Design Standard — Seismic Building Design Code","grp":"Structural","dom":"seismic","ctry":["KR"],"pri":1,"vf":"flag","use":"Mandates dynamic seismic qualification for suspended ceilings exceeding 250 m² in South Korea."},{"code":"KS F 2257 series","ttl":"Methods of fire resistance test for elements of building construction (Korea)","grp":"Fire","dom":"fireres","ctry":["KR"],"pri":0,"vf":"id","use":"Korea Fire Institute (KFI) certification test suite for building partitions and ceilings."},{"code":"SCDF Fire Safety Code 2023","ttl":"Singapore Civil Defence Force — Code of Practice for Fire Precautions","grp":"Fire","dom":"country","ctry":["SG"],"pri":1,"vf":"id","use":"Strict fire compartmentation, fire stopping, and non-combustible plenum requirements in Singapore."},{"code":"AS 1170.4:2024","ttl":"Structural design actions — Part 4: Earthquake actions in Australia","grp":"Structural","dom":"seismic","ctry":["AU"],"pri":1,"vf":"flag","use":"Updated 2024 edition; Importance Level 4 (IL4) mission-critical resilience criteria for Australian DCs."},{"code":"AS 1530.4","ttl":"Methods for fire tests on building materials, components and structures (Australia)","grp":"Fire","dom":"fireres","ctry":["AU"],"pri":1,"vf":"id","use":"Australian standard for fire-resistance tests of walls, ceilings, and service penetrations under NCC."},{"code":"QCVN 06:2022/BXD & SĐ1:2023","ttl":"National technical regulation on fire safety for houses and buildings (Vietnam)","grp":"Fire","dom":"country","ctry":["VN"],"pri":1,"vf":"flag","use":"Mandatory fire resistance (K0/K1, EI 60 to EI 150) for data center facilities in Vietnam."},{"code":"TCVN 2737:2023","ttl":"Loads and actions — Design standard (Vietnam)","grp":"Structural","dom":"country","ctry":["VN"],"pri":0,"vf":"id","use":"Updated 2023 wind and aerodynamic pressure standard for partition and wall calculations in Vietnam."},{"code":"ISO 834-1","ttl":"Fire resistance tests — standard time/temperature curve","grp":"Fire","dom":"fireres","ctry":[],"pri":0,"vf":"id","use":"International heating curve underlying most national fire-resistance tests."},{"code":"EN 1363-1","ttl":"Fire resistance tests — general requirements","grp":"Fire","dom":"fireres","ctry":[],"pri":0,"vf":"id","use":"Base method the EN 1364 / 1365 test series build on."},{"code":"EN 1364-2","ttl":"Non-loadbearing ceilings — fire resistance","grp":"Fire","dom":"fireres","ctry":[],"pri":0,"vf":"id","use":"Independent fire-resisting ceiling membranes."},{"code":"EN 13501-2","ttl":"Fire-resistance classification (EI / REI + minutes)","grp":"Fire","dom":"fireres","ctry":[],"pri":1,"vf":"id","use":"Turns EN 1364/1365 test data into the EI / REI class specified."},{"code":"UL 263","ttl":"Fire tests of building construction & materials","grp":"Fire","dom":"fireres","ctry":[],"pri":0,"vf":"id","use":"UL-listed assemblies routinely accepted alongside ASTM E119."},{"code":"BS 476-20/21/22","ttl":"Fire resistance of building elements (UK/legacy)","grp":"Fire","dom":"fireres","ctry":[],"pri":0,"vf":"flag","use":"UK-origin — still cited in Malaysia, Singapore, India, Thailand legacy specs."},{"code":"AS 4072.1","ttl":"Service penetrations & control joints (Australia)","grp":"Fire","dom":"joints","ctry":["AU"],"pri":0,"vf":"id","use":"AU penetration / joint sealing systems."},{"code":"EN ISO 1182","ttl":"Non-combustibility test","grp":"Fire","dom":"firereact","ctry":[],"pri":0,"vf":"id","use":"Feeds A1 / A2 Euroclass classification."},{"code":"EN ISO 1716","ttl":"Gross heat of combustion (calorific value)","grp":"Fire","dom":"firereact","ctry":[],"pri":0,"vf":"id","use":"Feeds A1 / A2 Euroclass classification."},{"code":"EN 13823","ttl":"Single Burning Item (SBI)","grp":"Fire","dom":"firereact","ctry":[],"pri":0,"vf":"id","use":"Feeds B–D Euroclass classification & smoke (s) / droplet (d) sub-class."},{"code":"AS 5637.1","ttl":"Determination of fire hazard properties (group number) — Australia","grp":"Fire","dom":"firereact","ctry":["AU"],"pri":0,"vf":"id","use":"AU Group 1–4 numbers used in NCC."},{"code":"KS F ISO 1182","ttl":"Non-combustibility test — Korean edition","grp":"Fire","dom":"firereact","ctry":["KR"],"pri":0,"vf":"flag","use":"KR KFI mandatory test for A/A2 claim in KR."},{"code":"KS F 2271","ttl":"Flame spread — Korea (KFI)","grp":"Fire","dom":"firereact","ctry":["KR"],"pri":0,"vf":"id","use":"KR fire hazard property test at KFI-certified labs."},{"code":"SNI 03-1735","ttl":"Indonesia fire safety in buildings","grp":"Fire","dom":"firereact","ctry":["ID"],"pri":1,"vf":"id","use":"Indonesia national fire code — Jakarta references SG standards per slide 60."},{"code":"ASTM C754","ttl":"Installation of steel framing to receive gypsum board","grp":"Structural","dom":"product","ctry":[],"pri":0,"vf":"id","use":"Non-structural framing installation specification."},{"code":"EN 14195","ttl":"Metal framing components for gypsum board systems","grp":"Structural","dom":"product","ctry":[],"pri":0,"vf":"id","use":"EU framing-component product spec."},{"code":"ASTM A653","ttl":"Hot-dip galvanized steel sheet specification","grp":"Structural","dom":"product","ctry":[],"pri":0,"vf":"flag","use":"Specify hot-dip galvanized or coil-coated steel for framing, hangers and metal pans exposed to return air."},{"code":"MY — MS EN 1993 / MS 1553 / MS EN 1998-1","ttl":"Steel (Eurocode NA) · wind · seismic (NA 2017) — Malaysia","grp":"Structural","dom":"country","ctry":["MY"],"pri":0,"vf":"id","use":"MS 1553:2002 is the wind code. Seismic = MS EN 1998-1:2015 with National Annex 2017."},{"code":"India — IS 875 / IS 1893 / IS 811 / IS 12777","ttl":"Load / seismic / CFS / fire — Indian Standards","grp":"Structural","dom":"country","ctry":["IN"],"pri":0,"vf":"id","use":"IS 1893 (Part 1):2016 governs seismic; the 2025 revision was withdrawn by BIS on 3 Mar 2026."},{"code":"INDO — SNI + BSN","ttl":"Standar Nasional Indonesia (Badan Standardisasi Nasional)","grp":"Fire","dom":"country","ctry":["ID"],"pri":1,"vf":"id","use":"Indonesia — Loads SNI 1727:2020; steel SNI 1729:2020 (AISC 360 based). Jakarta fire code references SG standards."},{"code":"KR — Building Act + KDS + KFI","ttl":"Building Act + KDS design standards + Korea Fire Institute","grp":"Fire","dom":"country","ctry":["KR"],"pri":1,"vf":"id","use":"Korea — mature hyperscale. KFI test queue estimated 4–6 months."},{"code":"TH — TIS + Building Control Act B.E. 2522","ttl":"Thai Industrial Standards + Building Control Act","grp":"Fire","dom":"country","ctry":["TH"],"pri":0,"vf":"id","use":"Thailand — primary market. TISI cert path; post-Fan Wall remediation needed."},{"code":"SG — SCDF + BCA + SS series","ttl":"SG Civil Defence + Building & Construction Authority + Singapore Standards","grp":"Fire","dom":"country","ctry":["SG"],"pri":0,"vf":"id","use":"Singapore — structural design to SS EN Eurocodes. SCDF fire code 2023 is the governing document."},{"code":"AU — NCC + AS/NZS","ttl":"National Construction Code + AS/NZS suite — Australia","grp":"Fire","dom":"country","ctry":["AU"],"pri":0,"vf":"id","use":"Australia — APAC DC scope = structural ceilings. Metal framing served by Rondo (Knauf Group, AU/NZ focus)."},{"code":"UL 555 / UL 555S","ttl":"Fire dampers / smoke dampers","grp":"Fire","dom":"plenum","ctry":[],"pri":0,"vf":"flag","use":"Fire dampers 1½h or 3h; smoke-damper leakage Class I ≤40.6 or II ≤101.6 L/s·m² at ~1 kPa; ≥121°C rating."},{"code":"EN 1366-2 / EN 15650","ttl":"Fire-damper test / damper product (EU)","grp":"Fire","dom":"plenum","ctry":[],"pri":0,"vf":"flag","use":"EU fire- & smoke-damper equivalents at partition / shaft penetrations."},{"code":"ASCE 7 (Ch. 13)","ttl":"Nonstructural component design (ASCE 7-22 / ASCE 7-16)","grp":"Structural","dom":"seismic","ctry":[],"pri":0,"vf":"flag","use":"ASCE 7-22 rewrote Eq. 13.3-1; 7-16 form underlies SNI 1726:2019. Ip = 1.5 for data centers."},{"code":"TCVN 9386:2012","ttl":"Seismic design — Vietnam (EC8-based)","grp":"Structural","dom":"seismic","ctry":["VN"],"pri":0,"vf":"id","use":"Low seismicity; HCMC near zero."},{"code":"ASTM E1966","ttl":"Fire-resistive joint systems","grp":"Fire","dom":"joints","ctry":[],"pri":0,"vf":"id","use":"Companion to UL 2079; cyclic movement + fire test."},{"code":"UL 9540A (2025 ed.)","ttl":"Thermal-runaway fire propagation test for BESS","grp":"Fire","dom":"ess","ctry":[],"pri":0,"vf":"flag","use":"Test data that sets separation and room design for Li-ion UPS / ESS."}];
+
+    /* ══════════════════════════════════════════════════════════
+       ATLAS RENDER — filter by country, group by Structural/Fire
+    ══════════════════════════════════════════════════════════ */
+    const ATLAS_DOM_COLORS = {
+      struct:    '#1b55e2',
+      seismic:   '#c46b00',
+      fireres:   '#b03030',
+      firereact: '#d44000',
+      joints:    '#7b3fb5',
+      product:   '#1a7a3c',
+      country:   '#0e7f6a',
+      plenum:    '#2271b4',
+      ess:       '#a85000'
+    };
+    const ATLAS_DOM_LABELS = {
+      struct:'Structural', seismic:'Seismic', fireres:'Fire Resistance',
+      firereact:'Reaction to Fire', joints:'Joints/HOW', product:'Product',
+      country:'National Code', plenum:'Plenum/Dampers', ess:'ESS/BESS'
+    };
+
+    function renderAtlasStandards(code) {
+      const panel = document.getElementById('std-atlas-panel');
+      if (!panel) return;
+      const relevant = STANDARDS_ATLAS.filter(s => s.ctry.length === 0 || s.ctry.includes(code));
+      const structural = relevant.filter(s => s.grp === 'Structural').sort((a,b) => b.pri - a.pri);
+      const fire = relevant.filter(s => s.grp === 'Fire').sort((a,b) => b.pri - a.pri);
+      const countEl = document.getElementById('atlas-count');
+      if (countEl) countEl.textContent = `${relevant.length} standards — ${structural.length} Structural · ${fire.length} Fire`;
+
+      function renderGroup(arr, groupTitle) {
+        if (!arr.length) return '';
+        return `<div>
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+            color:var(--fg-muted);margin-bottom:5px;">${groupTitle}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${arr.map(s => {
+              const col = ATLAS_DOM_COLORS[s.dom] || '#666';
+              const domLabel = ATLAS_DOM_LABELS[s.dom] || s.dom;
+              const vfIcon = s.vf === 'id' ? '✅' : '⚠';
+              const vfTip = s.vf === 'id' ? 'Verified on file' : 'Flagged — confirm status';
+              const priStarHtml = s.pri === 1
+                ? `<span style="color:${col};font-size:8px;margin-left:1px;">★</span>` : '';
+              return `<span
+                title="${s.ttl}&#10;Domain: ${domLabel}&#10;${s.use || ''}&#10;&#10;${vfTip}"
+                style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;
+                  border-radius:4px;font-size:10px;font-weight:600;cursor:default;white-space:nowrap;
+                  font-family:'Space Grotesk',sans-serif;
+                  background:${col}18;border:1px solid ${col}50;color:var(--fg);">
+                <span style="font-size:9px;line-height:1;">${vfIcon}</span>
+                ${s.code}${priStarHtml}
+              </span>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }
+
+      document.getElementById('atlas-structural').innerHTML = renderGroup(structural, '⚙ Structural Standards');
+      document.getElementById('atlas-fire').innerHTML = renderGroup(fire, '🔥 Fire Standards');
+      panel.style.display = 'block';
+    }
+
     let _selectedCountry = 'VN';
 
     function buildCountryPills() {
@@ -1922,6 +2006,9 @@ tr:nth-child(even) td{background:#fafbfc}
           seismicPanel.style.display = 'none';
         }
       }
+
+      // Standards Atlas library panel
+      renderAtlasStandards(code);
     }
 
     // Click-to-select opt pills
