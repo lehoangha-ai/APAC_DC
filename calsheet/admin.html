@@ -550,6 +550,16 @@
 
   /* ══ BOOT ══ */
   (async function boot() {
+    /* Self-service password reset via #reset hash */
+    if (location.hash === '#reset' || location.search.includes('reset=1')) {
+      try {
+        localStorage.removeItem(ADMIN_KEY);
+        sessionStorage.removeItem(SESSION_KEY);
+        history.replaceState(null, '', location.pathname);
+        alert('Admin password has been reset to default: "admin"');
+      } catch(e) {}
+    }
+
     await ensureDefaultPassword();
     /* Check session */
     let sess = false;
