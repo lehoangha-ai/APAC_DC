@@ -2509,6 +2509,9 @@ tr:nth-child(even) td{background:#fafbfc}
   <span>This calculation is provided by Knauf Vietnam as an advisory document. It must be reviewed and approved by the Developer, Project Management, or a licensed Structural Engineer before application to any project.</span>
 </div>
 
+<!-- ══ SUPABASE CLIENT ══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+
 <!-- ══ AUTH OVERLAY ══ -->
 <style>
   #auth-overlay {
@@ -2667,32 +2670,10 @@ tr:nth-child(even) td{background:#fafbfc}
 </div>
 
 <script>
-  /* ══ KNAUF AUTH — localStorage, email + password, no verification ══ */
-  const AUTH_KEY   = 'knauf_calc_users';    // { email: hashedPw }
-  const SESSION_KEY= 'knauf_calc_session';  // email of signed-in user
-
-  /* Simple hash (djb2) — not cryptographic, just not plaintext */
-  function hashPw(pw) {
-    let h = 5381;
-    for (let i = 0; i < pw.length; i++) h = ((h << 5) + h) ^ pw.charCodeAt(i);
-    return (h >>> 0).toString(16);
-  }
-
-  function authUsers() {
-    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || '{}'); } catch(e) { return {}; }
-  }
-  function authSaveUsers(u) {
-    try { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); } catch(e) {}
-  }
-  function authSession() {
-    try { return localStorage.getItem(SESSION_KEY) || null; } catch(e) { return null; }
-  }
-  function authSaveSession(email) {
-    try { localStorage.setItem(SESSION_KEY, email); } catch(e) {}
-  }
-  function authClearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
-  }
+  /* ══ KNAUF AUTH — Supabase email + password ══ */
+  const _SBURL = 'https://bkvnfrnqseqquewbcpqo.supabase.co';
+  const _SBKEY = 'sb_publishable__8xL8-Hn6UVlWYtzBunzdA_yY8bt16A';
+  const _sb = supabase.createClient(_SBURL, _SBKEY);
 
   function authShowError(msg)   { const e=document.getElementById('auth-error');   e.textContent=msg; e.style.display='block'; document.getElementById('auth-success').style.display='none'; }
   function authShowSuccess(msg) { const e=document.getElementById('auth-success'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-error').style.display='none'; }
@@ -2705,36 +2686,37 @@ tr:nth-child(even) td{background:#fafbfc}
     document.getElementById('auth-signup-form').style.display = tab==='signup' ? '' : 'none';
   }
 
-  function authSignIn() {
+  async function authSignIn() {
     authClearMessages();
     const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
     const pw    = document.getElementById('si-password')?.value || '';
     if (!email) return authShowError('Enter your email.');
     if (!pw)    return authShowError('Enter your password.');
-    const users = authUsers();
-    if (!users[email]) return authShowError('No account found for that email. Please sign up.');
-    if (users[email] !== hashPw(pw)) return authShowError('Incorrect password.');
-    authSaveSession(email);
-    authEnterApp(email);
+    const btn = document.getElementById('auth-signin-btn');
+    if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pw });
+    if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
+    if (error) return authShowError(error.message);
+    authEnterApp(data.user.email);
   }
 
-  function authSignUp() {
+  async function authSignUp() {
     authClearMessages();
     const email = (document.getElementById('su-email')?.value || '').trim().toLowerCase();
     const pw    = document.getElementById('su-password')?.value || '';
     if (!email || !email.includes('@')) return authShowError('Enter a valid email address.');
     if (pw.length < 6) return authShowError('Password must be at least 6 characters.');
-    const users = authUsers();
-    if (users[email]) return authShowError('An account with this email already exists. Sign in instead.');
-    users[email] = hashPw(pw);
-    authSaveUsers(users);
-    authSaveSession(email);
+    const btn = document.getElementById('auth-signup-btn');
+    if (btn) { btn.textContent = 'Creating…'; btn.disabled = true; }
+    const { data, error } = await _sb.auth.signUp({ email, password: pw });
+    if (btn) { btn.textContent = 'Create account'; btn.disabled = false; }
+    if (error) return authShowError(error.message);
     authShowSuccess('Account created! Signing you in…');
     setTimeout(() => authEnterApp(email), 800);
   }
 
-  function authSignOut() {
-    authClearSession();
+  async function authSignOut() {
+    await _sb.auth.signOut();
     document.getElementById('auth-bar').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
     authShowTab('signin');
@@ -2749,12 +2731,20 @@ tr:nth-child(even) td{background:#fafbfc}
     document.getElementById('auth-bar-email').textContent = email;
   }
 
-  /* ── Boot: check for existing session ── */
-  (function authBoot() {
-    const session = authSession();
-    if (session) {
-      authEnterApp(session);
-    }
+  /* ── Boot: restore existing Supabase session ── */
+  (async function authBoot() {
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session) authEnterApp(session.user.email);
+    } catch(e) {}
+    _sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        authEnterApp(session.user.email);
+      } else if (event === 'SIGNED_OUT') {
+        document.getElementById('auth-bar').style.display = 'none';
+        document.getElementById('auth-overlay').style.display = 'flex';
+      }
+    });
   })();
 </script>
 
