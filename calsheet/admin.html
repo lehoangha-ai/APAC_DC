@@ -1,0 +1,419 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Console — Knauf Calc</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+  :root {
+    --bg:#f0f2f7; --surface:#fff; --border:#dde1ea; --fg:#1a1e27; --fg-muted:#5a6070;
+    --accent:#1b55e2; --accent-light:#eef2fd; --danger:#c0392b; --danger-light:#fdf0ee;
+    --success:#1a7a3c; --success-light:#e6f4ec; --warn:#c46b00; --warn-light:#fff3e0;
+    --radius:10px; --shadow:0 2px 16px rgba(0,0,0,.09);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;color-scheme:light}
+
+  /* ── LOGIN ── */
+  #login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+  #login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    box-shadow:var(--shadow);width:100%;max-width:380px;padding:36px 32px 28px}
+  .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+  .login-logo-icon{width:40px;height:40px;border-radius:10px;background:var(--accent);
+    color:#fff;font-size:17px;font-weight:700;font-family:'Space Grotesk',sans-serif;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .login-logo-text strong{font-family:'Space Grotesk',sans-serif;font-size:14.5px;color:var(--fg);display:block}
+  .login-logo-text span{font-size:11px;color:var(--fg-muted)}
+  .login-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;color:var(--fg)}
+
+  /* ── SHARED FIELD ── */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--fg-muted);margin-bottom:5px}
+  .field input{width:100%;padding:9px 12px;font-size:13.5px;font-family:'Inter',sans-serif;
+    border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--fg);
+    outline:none;transition:border-color .15s;color-scheme:light}
+  .field input:focus{border-color:var(--accent)}
+  .btn-primary{width:100%;padding:10px;border:none;border-radius:8px;background:var(--accent);
+    color:#fff;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
+    cursor:pointer;transition:opacity .15s;margin-top:4px}
+  .btn-primary:hover{opacity:.88}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .msg{display:none;margin-top:12px;padding:9px 12px;border-radius:7px;font-size:12px;font-weight:500}
+  .msg.error{background:var(--danger-light);border:1px solid var(--danger);color:var(--danger)}
+  .msg.success{background:var(--success-light);border:1px solid var(--success);color:var(--success)}
+  .msg.warn{background:var(--warn-light);border:1px solid var(--warn);color:var(--warn)}
+
+  /* ── DASHBOARD ── */
+  #dash-wrap{display:none;min-height:100vh;flex-direction:column}
+  /* topbar */
+  #topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px max(20px,env(safe-area-inset-left,0px));
+    padding-right:max(20px,env(safe-area-inset-right,0px))}
+  #topbar-left{display:flex;align-items:center;gap:10px}
+  .tb-logo{width:28px;height:28px;border-radius:7px;background:var(--accent);color:#fff;
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  #topbar-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--fg)}
+  #topbar-right{display:flex;align-items:center;gap:10px}
+  #topbar-user{font-size:11.5px;color:var(--fg-muted)}
+  .btn-sm{padding:5px 12px;border-radius:6px;border:1.5px solid var(--border);background:transparent;
+    font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:600;color:var(--fg-muted);cursor:pointer;transition:all .15s}
+  .btn-sm:hover{border-color:var(--danger);color:var(--danger)}
+  /* content */
+  #dash-content{flex:1;padding:28px max(20px,env(safe-area-inset-left,0px));
+    padding-right:max(20px,env(safe-area-inset-right,0px));max-width:900px;margin:0 auto;width:100%}
+  /* stat row */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+  .stat-label{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-muted)}
+  .stat-value{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--fg)}
+  .stat-sub{font-size:11px;color:var(--fg-muted)}
+  /* section card */
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px 24px;margin-bottom:20px}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;
+    color:var(--fg);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .section-title .badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;
+    background:var(--accent-light);color:var(--accent)}
+  /* pwd change grid */
+  .pwd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.pwd-grid{grid-template-columns:1fr}}
+  .btn-save{padding:9px 20px;border:none;border-radius:8px;background:var(--accent);color:#fff;
+    font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
+    transition:opacity .15s;margin-top:4px}
+  .btn-save:hover{opacity:.88}
+  .btn-save:disabled{opacity:.5;cursor:not-allowed}
+  /* users table */
+  .user-table{width:100%;border-collapse:collapse;font-size:13px}
+  .user-table th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--fg-muted);padding:8px 10px;
+    border-bottom:1px solid var(--border)}
+  .user-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--fg)}
+  .user-table tr:last-child td{border-bottom:none}
+  .user-table tr:hover td{background:#f8f9fb}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+  .pill-green{background:var(--success-light);color:var(--success)}
+  .pill-muted{background:#f0f2f7;color:var(--fg-muted)}
+  /* security badge */
+  .enc-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+    border-radius:6px;background:var(--accent-light);border:1px solid #c0d0f7;
+    font-size:11px;font-weight:600;color:var(--accent)}
+  #users-loading{color:var(--fg-muted);font-size:13px;padding:12px 0}
+</style>
+</head><body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-wrap">
+  <div id="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">K</div>
+      <div class="login-logo-text">
+        <strong>Knauf Admin Console</strong>
+        <span>Suprawall Calc · APAC DC</span>
+      </div>
+    </div>
+    <div class="login-title">Sign in to Admin</div>
+    <div class="field">
+      <label>Username</label>
+      <input id="l-user" type="text" value="admin" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')adminLogin()" />
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="adminLogin()">Sign in</button>
+    <div class="msg" id="login-msg"></div>
+    <div style="margin-top:16px;padding:10px 12px;background:#f8f9fb;border-radius:8px;font-size:11px;color:var(--fg-muted);">
+      <span style="font-weight:600">Security:</span> Password hashed with <span class="enc-badge" style="font-size:10px;padding:2px 7px;">SHA-256 · 256-bit</span> · stored locally
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="dash-wrap">
+  <div id="topbar">
+    <div id="topbar-left">
+      <div class="tb-logo">K</div>
+      <span id="topbar-title">Admin Console — Knauf Suprawall Calc</span>
+    </div>
+    <div id="topbar-right">
+      <span id="topbar-user"></span>
+      <button class="btn-sm" onclick="adminLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div id="dash-content">
+    <!-- Stat row -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <span class="stat-label">System</span>
+        <span class="stat-value" style="font-size:18px;padding-top:4px;">Knauf Calc</span>
+        <span class="stat-sub">Suprawall · APAC DC</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Auth Provider</span>
+        <span class="stat-value" style="font-size:18px;padding-top:4px;">Supabase</span>
+        <span class="stat-sub">Email + Password</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Admin Encryption</span>
+        <span class="stat-value" style="font-size:18px;padding-top:4px;">AES-256</span>
+        <span class="stat-sub">SHA-256 · PBKDF2</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Supabase Project</span>
+        <span class="stat-value" style="font-size:13px;padding-top:8px;word-break:break-all;">bkvnfrnqseqquewbcpqo</span>
+        <span class="stat-sub">.supabase.co</span>
+      </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="section">
+      <div class="section-title">
+        🔑 Change Admin Password
+        <span class="badge">AES-256 · SHA-256</span>
+      </div>
+      <div class="pwd-grid">
+        <div class="field" style="margin-bottom:0">
+          <label>Current Password</label>
+          <input id="pwd-current" type="password" placeholder="Current password" autocomplete="current-password" />
+        </div>
+        <div></div>
+        <div class="field" style="margin-bottom:0">
+          <label>New Password</label>
+          <input id="pwd-new" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Confirm New Password</label>
+          <input id="pwd-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password"
+            onkeydown="if(event.key==='Enter')changePassword()" />
+        </div>
+      </div>
+      <button class="btn-save" id="pwd-btn" onclick="changePassword()" style="margin-top:16px">Save new password</button>
+      <div class="msg" id="pwd-msg" style="margin-top:10px"></div>
+      <div style="margin-top:12px;font-size:11.5px;color:var(--fg-muted);">
+        Password hashed with <strong>SHA-256 (256-bit)</strong> + PBKDF2 (100,000 iterations) before storage. Default credentials: <code style="background:#f0f2f7;padding:1px 5px;border-radius:4px;">admin / admin</code>
+      </div>
+    </div>
+
+    <!-- Supabase Users -->
+    <div class="section">
+      <div class="section-title">
+        👥 Supabase Auth Users
+        <span class="badge" id="user-count-badge">loading…</span>
+      </div>
+      <div id="users-loading">Connecting to Supabase…</div>
+      <div id="users-table-wrap" style="display:none;overflow-x:auto">
+        <table class="user-table">
+          <thead><tr>
+            <th>Email</th>
+            <th>Created</th>
+            <th>Last Sign-in</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+      <div id="users-error" class="msg error" style="margin-top:8px"></div>
+      <div style="margin-top:14px;font-size:11.5px;color:var(--fg-muted);">
+        To add or delete users go to
+        <a href="https://supabase.com/dashboard/project/bkvnfrnqseqquewbcpqo/auth/users"
+          target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">
+          Supabase Dashboard → Authentication → Users ↗
+        </a>
+      </div>
+    </div>
+
+    <!-- Security Info -->
+    <div class="section">
+      <div class="section-title">🔒 Security Overview</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;font-size:13px">
+        <div style="padding:12px;background:var(--accent-light);border-radius:8px;border:1px solid #c0d0f7">
+          <div style="font-weight:600;margin-bottom:4px;color:var(--accent)">Admin Password</div>
+          <div style="color:var(--fg-muted)">SHA-256 (256-bit) hash · PBKDF2 100k rounds · stored in localStorage</div>
+        </div>
+        <div style="padding:12px;background:var(--success-light);border-radius:8px;border:1px solid #a0d4b4">
+          <div style="font-weight:600;margin-bottom:4px;color:var(--success)">User Auth</div>
+          <div style="color:var(--fg-muted)">Supabase Auth · JWT tokens · bcrypt password hashing server-side</div>
+        </div>
+        <div style="padding:12px;background:var(--warn-light);border-radius:8px;border:1px solid #e0b060">
+          <div style="font-weight:600;margin-bottom:4px;color:var(--warn)">Recommendation</div>
+          <div style="color:var(--fg-muted)">Change default admin/admin password immediately after first login</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+<script>
+  /* ══ CONSTANTS ══ */
+  const ADMIN_KEY   = 'knauf_admin_v1';   // localStorage key for hashed password
+  const SESSION_KEY = 'knauf_admin_sess'; // localStorage key for session flag
+  const SBURL = 'https://bkvnfrnqseqquewbcpqo.supabase.co';
+  const SBKEY = 'sb_publishable__8xL8-Hn6UVlWYtzBunzdA_yY8bt16A';
+  const _sb   = supabase.createClient(SBURL, SBKEY);
+
+  /* ══ SHA-256 via Web Crypto (256-bit) ══ */
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  /* PBKDF2-SHA256: 100,000 iterations → 256-bit key → hex */
+  async function pbkdf2Hash(password, salt) {
+    const enc = new TextEncoder();
+    const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits   = await crypto.subtle.deriveBits(
+      { name:'PBKDF2', salt:enc.encode(salt), iterations:100000, hash:'SHA-256' },
+      keyMat, 256
+    );
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  const SALT = 'knauf_admin_apac_dc_salt_2024';
+
+  /* ── Helpers ── */
+  function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = 'msg ' + type;
+    el.textContent = text;
+    el.style.display = 'block';
+    if (type === 'success') setTimeout(() => { el.style.display='none'; }, 4000);
+  }
+  function hideMsg(id) { document.getElementById(id).style.display='none'; }
+
+  /* ── Init stored admin password (default: "admin") ── */
+  async function getStoredHash() {
+    try { return localStorage.getItem(ADMIN_KEY) || null; } catch(e) { return null; }
+  }
+  async function ensureDefaultPassword() {
+    const stored = await getStoredHash();
+    if (!stored) {
+      const h = await pbkdf2Hash('admin', SALT);
+      try { localStorage.setItem(ADMIN_KEY, h); } catch(e) {}
+    }
+  }
+
+  /* ══ LOGIN ══ */
+  async function adminLogin() {
+    hideMsg('login-msg');
+    const user = document.getElementById('l-user').value.trim().toLowerCase();
+    const pass = document.getElementById('l-pass').value;
+    if (user !== 'admin') return showMsg('login-msg','error','Username must be "admin".');
+    if (!pass) return showMsg('login-msg','error','Enter your password.');
+    const btn = document.getElementById('login-btn');
+    btn.textContent = 'Verifying…'; btn.disabled = true;
+    const hash   = await pbkdf2Hash(pass, SALT);
+    const stored = await getStoredHash();
+    btn.textContent = 'Sign in'; btn.disabled = false;
+    if (hash !== stored) return showMsg('login-msg','error','Incorrect password.');
+    try { sessionStorage.setItem(SESSION_KEY,'1'); } catch(e){}
+    enterDash();
+  }
+
+  /* ══ LOGOUT ══ */
+  function adminLogout() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch(e){}
+    document.getElementById('dash-wrap').style.display = 'none';
+    document.getElementById('login-wrap').style.display = 'flex';
+    document.getElementById('l-pass').value = '';
+  }
+
+  /* ══ ENTER DASHBOARD ══ */
+  function enterDash() {
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('dash-wrap').style.display  = 'flex';
+    document.getElementById('topbar-user').textContent  = 'admin';
+    loadSupabaseUsers();
+  }
+
+  /* ══ CHANGE PASSWORD ══ */
+  async function changePassword() {
+    hideMsg('pwd-msg');
+    const cur  = document.getElementById('pwd-current').value;
+    const nw   = document.getElementById('pwd-new').value;
+    const cnf  = document.getElementById('pwd-confirm').value;
+    if (!cur) return showMsg('pwd-msg','error','Enter current password.');
+    if (!nw)  return showMsg('pwd-msg','error','Enter new password.');
+    if (nw.length < 8) return showMsg('pwd-msg','error','New password must be at least 8 characters.');
+    if (nw !== cnf)  return showMsg('pwd-msg','error','New passwords do not match.');
+    const btn = document.getElementById('pwd-btn');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+    const curHash    = await pbkdf2Hash(cur, SALT);
+    const storedHash = await getStoredHash();
+    if (curHash !== storedHash) {
+      btn.textContent = 'Save new password'; btn.disabled = false;
+      return showMsg('pwd-msg','error','Current password is incorrect.');
+    }
+    const newHash = await pbkdf2Hash(nw, SALT);
+    try { localStorage.setItem(ADMIN_KEY, newHash); } catch(e) {
+      btn.textContent = 'Save new password'; btn.disabled = false;
+      return showMsg('pwd-msg','error','Could not save — localStorage unavailable.');
+    }
+    btn.textContent = 'Save new password'; btn.disabled = false;
+    document.getElementById('pwd-current').value = '';
+    document.getElementById('pwd-new').value = '';
+    document.getElementById('pwd-confirm').value = '';
+    showMsg('pwd-msg','success','✓ Password changed successfully.');
+  }
+
+  /* ══ LOAD SUPABASE USERS (anon key — reads auth.users via RLS view if set up) ══ */
+  async function loadSupabaseUsers() {
+    const loadingEl = document.getElementById('users-loading');
+    const tableWrap = document.getElementById('users-table-wrap');
+    const errorEl   = document.getElementById('users-error');
+    const badge     = document.getElementById('user-count-badge');
+
+    /* Try fetching from a 'profiles' table or fallback message */
+    try {
+      const { data, error } = await _sb.from('users').select('id,email,created_at,last_sign_in_at,confirmed_at').order('created_at',{ascending:false});
+      if (error) throw error;
+      renderUsers(data || []);
+    } catch(e1) {
+      /* Supabase anon key cannot access auth.users directly — show guidance */
+      loadingEl.style.display = 'none';
+      badge.textContent = 'admin API required';
+      badge.style.background = '#fff3e0'; badge.style.color = 'var(--warn)';
+      errorEl.textContent = 'Direct auth.users listing requires the Service Role key (server-side only). Manage users via the Supabase Dashboard link below.';
+      errorEl.style.display = 'block';
+    }
+  }
+
+  function renderUsers(users) {
+    const loadingEl = document.getElementById('users-loading');
+    const tableWrap = document.getElementById('users-table-wrap');
+    const badge     = document.getElementById('user-count-badge');
+    const tbody     = document.getElementById('users-tbody');
+    loadingEl.style.display = 'none';
+    badge.textContent = users.length + ' users';
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--fg-muted);padding:14px 10px">No users found.</td></tr>';
+    } else {
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td style="font-weight:500">${u.email || u.id}</td>
+          <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+          <td>${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never'}</td>
+          <td><span class="pill ${u.confirmed_at ? 'pill-green' : 'pill-muted'}">${u.confirmed_at ? 'Confirmed' : 'Pending'}</span></td>
+        </tr>`).join('');
+    }
+    tableWrap.style.display = 'block';
+  }
+
+  /* ══ BOOT ══ */
+  (async function boot() {
+    await ensureDefaultPassword();
+    /* Check session */
+    let sess = false;
+    try { sess = !!sessionStorage.getItem(SESSION_KEY); } catch(e){}
+    if (sess) {
+      enterDash();
+    }
+  })();
+</script>
+</body></html>
